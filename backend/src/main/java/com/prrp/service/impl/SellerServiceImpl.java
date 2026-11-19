@@ -3,6 +3,7 @@ package com.prrp.service.impl;
 import com.prrp.dto.SellerAnalyticsResponse;
 import com.prrp.dto.SellerDashboardResponse;
 import com.prrp.entity.ModerationStatus;
+import com.prrp.entity.Product;
 import com.prrp.entity.Review;
 import com.prrp.entity.Role;
 import com.prrp.entity.User;
@@ -72,14 +73,18 @@ public class SellerServiceImpl implements SellerService {
     @Override
     @Transactional(readOnly = true)
     public SellerAnalyticsResponse getSellerRatings(Long sellerId) {
+        List<Product> products = productRepository.findBySellerId(sellerId);
         List<Review> sellerReviews = reviewRepository.findByProductSellerId(sellerId, Sort.unsorted());
+
         long approvedCount = sellerReviews.stream().filter(r -> r.getModerationStatus() == ModerationStatus.APPROVED).count();
+        long pendingCount = sellerReviews.stream().filter(r -> r.getModerationStatus() == ModerationStatus.PENDING).count();
+        long rejectedCount = sellerReviews.stream().filter(r -> r.getModerationStatus() == ModerationStatus.REJECTED).count();
 
         double avgRating = sellerReviews.stream()
                 .filter(r -> r.getModerationStatus() == ModerationStatus.APPROVED)
                 .mapToInt(Review::getRating)
                 .average()
-                .orElse(4.8);
+                .orElse(0.0);
 
         Map<Integer, Long> distribution = new LinkedHashMap<>();
         for (int i = 5; i >= 1; i--) {
@@ -91,7 +96,42 @@ public class SellerServiceImpl implements SellerService {
 
         double roundedAvg = Math.round(avgRating * 10.0) / 10.0;
         long posCount = distribution.get(5) + distribution.get(4);
-        double positivePct = approvedCount > 0 ? Math.round(((double) posCount / approvedCount) * 1000.0) / 10.0 : 98.4;
+        double positivePct = approvedCount > 0 ? Math.round(((double) posCount / approvedCount) * 1000.0) / 10.0 : 0.0;
+
+        List<SellerAnalyticsResponse.ProductPerformanceDto> performanceList = products.stream()
+                .map(p -> {
+                    Double pAvg = reviewRepository.findAverageRatingByProductId(p.getId());
+                    long pCount = reviewRepository.countApprovedByProductId(p.getId());
+                    String thumb = p.getImages() != null && !p.getImages().isEmpty()
+                            ? p.getImages().get(0).getImageUrl()
+                            : "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80";
+
+                    return SellerAnalyticsResponse.ProductPerformanceDto.builder()
+                            .id(p.getId())
+                            .name(p.getName())
+                            .averageRating(pAvg != null ? Math.round(pAvg * 10.0) / 10.0 : 0.0)
+                            .reviewCount(pCount)
+                            .price(p.getPrice())
+                            .thumbnail(thumb)
+                            .build();
+                })
+                .sorted((a, b) -> Double.compare(b.getAverageRating(), a.getAverageRating()))
+                .collect(Collectors.toList());
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
+        List<SellerAnalyticsResponse.SellerFeedbackDto> recentFeedback = sellerReviews.stream()
+                .limit(10)
+                .map(r -> SellerAnalyticsResponse.SellerFeedbackDto.builder()
+                        .id(r.getId())
+                        .productName(r.getProduct().getName())
+                        .buyerName(r.getUser().getFullName())
+                        .rating(r.getRating())
+                        .title(r.getTitle())
+                        .comment(r.getComment())
+                        .date(r.getCreatedAt() != null ? r.getCreatedAt().format(formatter) : "Recently")
+                        .moderationStatus(r.getModerationStatus().name())
+                        .build())
+                .collect(Collectors.toList());
 
         SellerAnalyticsResponse.SellerAspectBreakdown breakdown = SellerAnalyticsResponse.SellerAspectBreakdown.builder()
                 .itemAsDescribed(roundedAvg)
@@ -101,43 +141,18 @@ public class SellerServiceImpl implements SellerService {
                 .dispatchTime(4.8)
                 .build();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
-        List<SellerAnalyticsResponse.SellerFeedbackDto> recentFeedback = sellerReviews.stream()
-                .filter(r -> r.getModerationStatus() == ModerationStatus.APPROVED)
-                .limit(6)
-                .map(r -> SellerAnalyticsResponse.SellerFeedbackDto.builder()
-                        .id(r.getId())
-                        .buyerName(r.getUser().getFullName())
-                        .rating(r.getRating())
-                        .comment(r.getComment())
-                        .date(r.getCreatedAt() != null ? r.getCreatedAt().format(formatter) : "Recently")
-                        .build())
-                .collect(Collectors.toList());
-
-        if (recentFeedback.isEmpty()) {
-            recentFeedback.add(SellerAnalyticsResponse.SellerFeedbackDto.builder()
-                    .id(1L)
-                    .buyerName("Verified Buyer")
-                    .rating(5)
-                    .comment("Great packaging and prompt dispatch. Quality of the item matched catalog photos exactly.")
-                    .date("18 Nov 2026")
-                    .build());
-            recentFeedback.add(SellerAnalyticsResponse.SellerFeedbackDto.builder()
-                    .id(2L)
-                    .buyerName("Verified Shopper")
-                    .rating(5)
-                    .comment("Responsive seller. Answered shipping queries within an hour. Excellent service.")
-                    .date("16 Nov 2026")
-                    .build());
-        }
-
         return SellerAnalyticsResponse.builder()
                 .overallRating(roundedAvg)
-                .totalSellerReviews(approvedCount > 0 ? approvedCount : 124L)
+                .totalSellerReviews(approvedCount)
                 .positivePercentage(positivePct)
-                .breakdown(breakdown)
+                .totalProducts((long) products.size())
+                .approvedReviews(approvedCount)
+                .pendingReviews(pendingCount)
+                .rejectedReviews(rejectedCount)
                 .distribution(distribution)
+                .productPerformance(performanceList)
                 .recentFeedback(recentFeedback)
+                .breakdown(breakdown)
                 .build();
     }
 

@@ -107,3 +107,15 @@ Track: FSD Java (MCA 2nd Year)
   2. Spring Boot 3.3.5 Backend on port 8085 via Maven.
   3. React 19 Frontend on port 5173 via Vite.
   4. Automatically opens `http://localhost:5173` in the default web browser.
+
+
+---
+
+## 6. Admin Moderation Detail View & Real Database Analytics Upgrade
+- **Admin Review Content Inspection**:
+  - Enhanced `AdminDashboardPage.jsx` with a dedicated "Review Title & Description" column displaying full review titles, customer comments, and attached image thumbnails.
+  - Added an interactive inspection modal (`selectedReview`) allowing administrators to read detailed customer feedback and customer info before approving or rejecting.
+- **100% Real Database Analytics for Sellers**:
+  - Replaced the synthetic aspect scores (shipping speed, packaging quality, etc.) with real, defensible MySQL data.
+  - Added **Product Rating Comparison Bar Chart** (`productPerformance`) displaying live average ratings and review counts per catalog SKU from the `products` and `reviews` tables.
+  - Added **Star Rating Distribution Breakdown** (5★ down to 1★) with live progress bars and verified customer feedback feeds.

@@ -82,6 +82,15 @@ public class ProductServiceImpl implements ProductService {
         List<ProductResponse> list = productRepository.findBySellerId(sellerId).stream()
                 .map(this::mapToProductResponse)
                 .collect(Collectors.toList());
+
+        list.sort((a, b) -> {
+            int ratingCompare = Double.compare(b.getAverageRating(), a.getAverageRating());
+            if (ratingCompare != 0) return ratingCompare;
+            int reviewCompare = Long.compare(b.getTotalReviews(), a.getTotalReviews());
+            if (reviewCompare != 0) return reviewCompare;
+            return a.getName().compareToIgnoreCase(b.getName());
+        });
+
         for (int i = 0; i < list.size(); i++) {
             list.get(i).setRank(i + 1);
         }

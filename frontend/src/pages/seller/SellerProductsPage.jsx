@@ -45,7 +45,12 @@ const SellerProductsPage = () => {
     try {
       setLoading(true);
       const data = await productService.getSellerProducts(sellerId);
-      setProducts(data);
+      const sorted = [...(data || [])].sort((a, b) => {
+        const rDiff = (b.rating ?? b.averageRating ?? 0) - (a.rating ?? a.averageRating ?? 0);
+        if (rDiff !== 0) return rDiff;
+        return (b.reviewCount ?? b.totalReviews ?? 0) - (a.reviewCount ?? a.totalReviews ?? 0);
+      });
+      setProducts(sorted.map((p, i) => ({ ...p, rank: i + 1 })));
     } catch (err) {
       console.error(err);
     } finally {
@@ -93,7 +98,15 @@ const SellerProductsPage = () => {
       };
 
       const created = await productService.createProduct(payload);
-      setProducts(prev => [created, ...prev]);
+      setProducts(prev => {
+        const next = [created, ...prev];
+        next.sort((a, b) => {
+          const rDiff = (b.rating ?? b.averageRating ?? 0) - (a.rating ?? a.averageRating ?? 0);
+          if (rDiff !== 0) return rDiff;
+          return (b.reviewCount ?? b.totalReviews ?? 0) - (a.reviewCount ?? a.totalReviews ?? 0);
+        });
+        return next.map((p, i) => ({ ...p, rank: i + 1 }));
+      });
       setSuccessMsg(`"${created.name}" published successfully to catalog!`);
       setShowAddModal(false);
       setFormData({

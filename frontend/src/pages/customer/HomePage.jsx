@@ -7,7 +7,6 @@ import {
   ShieldCheck, 
   Award, 
   TrendingUp, 
-  CheckCircle2, 
   SlidersHorizontal,
   Sparkles,
   ChevronRight,
@@ -17,7 +16,9 @@ import {
   Wrench,
   Coffee,
   Dumbbell,
-  Gamepad2
+  Gamepad2,
+  Filter,
+  CheckCircle2
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import ProductCard from '../../components/common/ProductCard';
@@ -35,8 +36,9 @@ const iconComponents = {
 
 const HomePage = () => {
   const [categories, setCategories] = useState([]);
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [heroSearch, setHeroSearch] = useState('');
+  const [allProducts, setAllProducts] = useState([]);
+  const [selectedCatId, setSelectedCatId] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -49,10 +51,10 @@ const HomePage = () => {
       setLoading(true);
       const [cats, prods] = await Promise.all([
         productService.getCategories(),
-        productService.getProducts({ sortBy: 'rating-desc' })
+        productService.getProducts({ sortBy: 'rating-desc', size: 50 })
       ]);
-      setCategories(cats);
-      setFeaturedProducts(prods.slice(0, 4));
+      setCategories(cats || []);
+      setAllProducts(prods || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -60,176 +62,177 @@ const HomePage = () => {
     }
   };
 
-  const handleHeroSearch = (e) => {
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (heroSearch.trim()) {
-      navigate(`/products?search=${encodeURIComponent(heroSearch.trim())}`);
+    if (searchTerm.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
     } else {
       navigate('/products');
     }
   };
 
+  const filteredProducts = allProducts.filter(p => {
+    const matchesCategory = selectedCatId === 'all' || p.categoryId === Number(selectedCatId);
+    const matchesSearch = !searchTerm.trim() || 
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.categoryName.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
   return (
-    <div className="space-y-16 pb-16">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900 text-white py-16 sm:py-24">
-        {/* Subtle decorative circles */}
-        <div className="absolute top-0 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-10 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-purple-200">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>India's Transparent Product Review & Rating Platform</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight">
-            Discover Verified Reviews. <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-amber-300 via-pink-200 to-white bg-clip-text text-transparent">
-              Shop with Uncompromised Confidence.
-            </span>
-          </h1>
-
-          <p className="text-purple-200 text-sm sm:text-lg max-w-2xl mx-auto font-normal leading-relaxed">
-            Unbiased community feedback, category-ranked products, and authenticated seller ratings tailored for modern Indian consumers.
-          </p>
-
-          {/* Large Hero Search Box */}
-          <div className="max-w-2xl mx-auto pt-2">
-            <form onSubmit={handleHeroSearch} className="relative flex items-center shadow-2xl rounded-2xl overflow-hidden bg-white p-1.5 border border-purple-200/40">
-              <div className="pl-4 text-slate-400">
-                <Search className="w-5 h-5" />
+    <div className="space-y-10 pb-16">
+      {/* Top Marketplace Controls Bar */}
+      <section className="bg-white border-b border-slate-200/80 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700">
+                  Verified Marketplace
+                </span>
+                <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  100% Moderated Reviews
+                </span>
               </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+                Explore Marketplace Products
+              </h1>
+            </div>
+
+            {/* Quick Search Input */}
+            <form onSubmit={handleSearchSubmit} className="relative max-w-md w-full">
               <input
                 type="text"
-                value={heroSearch}
-                onChange={(e) => setHeroSearch(e.target.value)}
-                placeholder="Search products, brands, or categories (e.g. Headphones, Serum, Cookware)..."
-                className="w-full px-4 py-3 text-slate-800 placeholder-slate-400 text-sm sm:text-base outline-none bg-transparent"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search products by brand, model, SKU..."
+                className="w-full bg-slate-50 focus:bg-white text-xs sm:text-sm rounded-2xl pl-10 pr-24 py-3 border border-slate-200 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
               />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <button
                 type="submit"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-5 sm:px-7 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-md"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
               >
-                <span>Search</span>
-                <ArrowRight className="w-4 h-4" />
+                Search
               </button>
             </form>
-
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-xs text-purple-200">
-              <span className="font-semibold text-purple-300">Popular:</span>
-              <Link to="/products?category=consumer-electronics-tech" className="hover:text-white underline decoration-purple-400">
-                ANC Headphones
-              </Link>
-              <span>•</span>
-              <Link to="/products?category=health-beauty-personal-care" className="hover:text-white underline decoration-purple-400">
-                Kumkumadi Serum
-              </Link>
-              <span>•</span>
-              <Link to="/products?category=home-kitchen-garden" className="hover:text-white underline decoration-purple-400">
-                Tri-Ply Cookware
-              </Link>
-              <span>•</span>
-              <Link to="/products?category=food-beverage" className="hover:text-white underline decoration-purple-400">
-                Arabica Coffee
-              </Link>
-            </div>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-              <p className="text-2xl font-black text-white">8</p>
-              <p className="text-xs text-purple-200 font-medium">Core Categories</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-              <p className="text-2xl font-black text-amber-300">100%</p>
-              <p className="text-xs text-purple-200 font-medium">Moderated Reviews</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-              <p className="text-2xl font-black text-white">₹ INR</p>
-              <p className="text-xs text-purple-200 font-medium">Indian Pricing</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-              <p className="text-2xl font-black text-emerald-400">2-Way</p>
-              <p className="text-xs text-purple-200 font-medium">Customer & Seller Hub</p>
-            </div>
+          {/* Category Filter Pills Bar */}
+          <div className="flex items-center gap-2 overflow-x-auto pt-4 pb-1 no-scrollbar text-xs">
+            <button
+              onClick={() => setSelectedCatId('all')}
+              className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+                selectedCatId === 'all'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              All Catalog ({allProducts.length})
+            </button>
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCatId(c.id)}
+                className={`px-3.5 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedCatId === c.id
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Eight Category Cards in Responsive Grid */}
+      {/* Main Marketplace Products Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Explore By Domain
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Eight Curated Categories
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Award className="w-5 h-5 text-purple-600" />
+              {selectedCatId === 'all' ? 'All Verified Products' : categories.find(c => c.id === selectedCatId)?.name || 'Filtered Products'}
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Browse authentic ratings and feedback across the platform's primary product categories.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Showing {filteredProducts.length} items ranked by authentic customer ratings
+            </p>
+          </div>
+
+          <Link
+            to="/products"
+            className="text-xs font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1 group"
+          >
+            <span>Full Catalog View</span>
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="py-20 text-center text-slate-400">
+            <div className="inline-block w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3" />
+            <p className="text-xs">Loading marketplace catalog...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3">
+            <p className="text-slate-500 text-sm">No products matched your search or category filter.</p>
+            <button
+              onClick={() => { setSelectedCatId('all'); setSearchTerm(''); }}
+              className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-xl"
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Categories Showcase Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <SlidersHorizontal className="w-5 h-5 text-purple-600" />
+              Browse by Product Category
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Curated domains with independent product feedback
             </p>
           </div>
           <Link
             to="/products"
-            className="inline-flex items-center gap-1.5 text-sm font-bold text-purple-700 hover:text-purple-900 group"
+            className="text-xs font-bold text-purple-700 hover:text-purple-900"
           >
-            <span>View All Categories</span>
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            View All ({categories.length})
           </Link>
         </div>
 
-        {/* 8 Category Cards Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
           {categories.map((category) => {
             const IconComponent = iconComponents[category.icon] || Sparkles;
             return (
               <Link
                 key={category.id}
                 to={`/products?category=${category.id}`}
-                className="group relative bg-white rounded-2xl border border-purple-100/80 shadow-xs hover:shadow-xl hover:border-purple-300 transition-all duration-300 overflow-hidden flex flex-col"
+                className="group p-4 bg-white rounded-2xl border border-slate-200/80 hover:border-purple-300 shadow-2xs hover:shadow-md transition-all flex items-center gap-3"
               >
-                {/* Image Header with Gradient Overlay */}
-                <div className="relative h-44 overflow-hidden bg-slate-100">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/30 to-transparent" />
-                  
-                  {/* Category Icon Badge */}
-                  <div className="absolute top-3 left-3 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-md text-purple-700 flex items-center justify-center shadow-md">
-                    <IconComponent className="w-4 h-4" />
-                  </div>
-
-                  {/* Item count tag */}
-                  <div className="absolute bottom-3 left-3 right-3 text-white">
-                    <span className="text-[11px] font-semibold bg-purple-600/90 backdrop-blur-xs px-2 py-0.5 rounded-full">
-                      {category.itemCount}+ Reviewed Items
-                    </span>
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                  <IconComponent className="w-5 h-5" />
                 </div>
-
-                {/* Body Content */}
-                <div className="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-base group-hover:text-purple-700 transition-colors leading-snug mb-1">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                      {category.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-purple-600 group-hover:text-purple-800">
-                    <span>Explore Products</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
+                <div className="overflow-hidden">
+                  <h3 className="font-bold text-slate-900 text-xs truncate group-hover:text-purple-700 transition-colors">
+                    {category.name}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Explore items &rarr;
+                  </p>
                 </div>
               </Link>
             );
@@ -237,85 +240,42 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Featured / Top Rated Products */}
-      <section className="bg-purple-50/50 py-16 border-y border-purple-100/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">
-                <Award className="w-3.5 h-3.5" />
-                Community Favorites
+      {/* Platform Trust & Verification Banner */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl text-white p-6 sm:p-8 shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center flex-shrink-0">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Top Rated Products
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Highest scored electronics, wellness serums, home cookware & gourmet coffee.
-              </p>
-            </div>
-            <Link
-              to="/products?sort=rating-desc"
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-purple-700 hover:text-purple-900 group"
-            >
-              <span>See Full Rankings</span>
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust & Transparency Feature Blocks */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl text-white p-8 sm:p-12 shadow-xl">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-            <div className="lg:col-span-1 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-300 bg-purple-800/60 px-3 py-1 rounded-full border border-purple-700">
-                Platform Integrity
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-extrabold">
-                Engineered for Authentic Indian Commerce
-              </h3>
-              <p className="text-sm text-purple-200 leading-relaxed">
-                PRRP eliminates deceptive astroturfing and sponsored spam through multi-layer verification and separate seller accountability.
-              </p>
+              <div>
+                <h4 className="font-bold text-sm text-white">100% Moderated Reviews</h4>
+                <p className="text-xs text-purple-200 mt-1 leading-relaxed">
+                  Every submitted review passes administrative moderation before affecting live product scores.
+                </p>
+              </div>
             </div>
 
-            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15">
-                <ShieldCheck className="w-7 h-7 text-emerald-400 mb-2" />
-                <h4 className="font-bold text-sm text-white mb-1">Human & Automated Moderation</h4>
-                <p className="text-xs text-purple-200 leading-relaxed">
-                  Every submitted feedback piece transitions through moderation before appearing on live storefronts.
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center flex-shrink-0">
+                <Star className="w-5 h-5 text-amber-300" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-white">Weighted Ranking Engine</h4>
+                <p className="text-xs text-purple-200 mt-1 leading-relaxed">
+                  Platform scores combine star rating averages with verified customer review volume.
                 </p>
               </div>
+            </div>
 
-              <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15">
-                <Star className="w-7 h-7 text-amber-300 mb-2" />
-                <h4 className="font-bold text-sm text-white mb-1">Independent Seller Ratings</h4>
-                <p className="text-xs text-purple-200 leading-relaxed">
-                  Seller performance metrics (dispatch speed, packaging) are stored separately from product build quality.
-                </p>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-5 h-5 text-indigo-300" />
               </div>
-
-              <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15">
-                <TrendingUp className="w-7 h-7 text-indigo-300 mb-2" />
-                <h4 className="font-bold text-sm text-white mb-1">Weighted Ranking Algorithm</h4>
-                <p className="text-xs text-purple-200 leading-relaxed">
-                  Rankings balance pure score averages with verified volume so niche products don't artificially dominate.
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15">
-                <Award className="w-7 h-7 text-pink-300 mb-2" />
-                <h4 className="font-bold text-sm text-white mb-1">Customer Dashboard</h4>
-                <p className="text-xs text-purple-200 leading-relaxed">
-                  Shoppers track moderation statuses, edit draft reviews, and showcase Top Reviewer community badges.
+              <div>
+                <h4 className="font-bold text-sm text-white">Dual Persona Platform</h4>
+                <p className="text-xs text-purple-200 mt-1 leading-relaxed">
+                  Dedicated portals for Indian shoppers and merchant sellers with full transparency.
                 </p>
               </div>
             </div>

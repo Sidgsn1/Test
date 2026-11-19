@@ -11,7 +11,7 @@ export const setAuthToken = (token) => {
   }
 };
 
-export const apiRequest = async (endpoint, options = {}) => {
+export const apiRequest = async (endpoint, options = {}, timeoutMs = 2000) => {
   const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -19,24 +19,34 @@ export const apiRequest = async (endpoint, options = {}) => {
     ...(options.headers || {})
   };
 
-  const config = {
-    ...options,
-    headers
-  };
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  const response = await fetch(endpoint, config);
-  if (!response.ok) {
-    let errorMsg = `HTTP ${response.status}`;
-    try {
-      const errData = await response.json();
-      errorMsg = errData.message || errorMsg;
-    } catch (_) {}
-    throw new Error(errorMsg);
+  try {
+    const response = await fetch(endpoint, {
+      ...options,
+      headers,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      let errorMsg = `HTTP ${response.status}`;
+      try {
+        const errData = await response.json();
+        errorMsg = errData.message || errorMsg;
+      } catch (_) {}
+      throw new Error(errorMsg);
+    }
+
+    if (response.status === 204) {
+      return null;
+    }
+
+    return response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
   }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
 };

@@ -182,6 +182,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateUserProfile,
         switchRole,
+        role: user?.role,
         isAuthenticated: !!user,
         isCustomer: user?.role === 'customer',
         isSeller: user?.role === 'seller',

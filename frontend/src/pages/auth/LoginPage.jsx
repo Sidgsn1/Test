@@ -42,8 +42,12 @@ const LoginPage = () => {
 
     try {
       setIsSubmitting(true);
-      await login(email, password, role);
-      const redirectPath = location.state?.from?.pathname || (role === 'seller' ? '/seller/dashboard' : role === 'admin' ? '/admin/dashboard' : '/');
+      const loggedUser = await login(email, password, role);
+      const userRole = loggedUser?.role || role;
+      const targetPath = userRole === 'seller' ? '/seller/dashboard' : userRole === 'admin' ? '/admin/dashboard' : '/';
+      const redirectPath = (location.state?.from?.pathname && location.state.from.pathname !== '/login') 
+        ? location.state.from.pathname 
+        : targetPath;
       navigate(redirectPath, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed. Please verify credentials.');

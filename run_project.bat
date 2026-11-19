@@ -9,28 +9,34 @@ echo ========================================================
 echo.
 
 set ROOT_DIR=%~dp0
-cd /d "%ROOT_DIR%"
+set MAVEN_BIN=C:\Users\adity\maven\apache-maven-3.9.6\bin
+set MYSQL_BIN=C:\Program Files\MySQL\MySQL Server 8.4\bin
+set PATH=%MAVEN_BIN%;%MYSQL_BIN%;%PATH%
 
-echo [1/2] Checking Frontend...
-if not exist "%ROOT_DIR%frontend\node_modules\" (
-    echo Installing frontend dependencies...
-    cd "%ROOT_DIR%frontend"
-    call npm install
+echo [1/3] Checking MySQL Server...
+netstat -ano | findstr :3306 >nul
+if %errorlevel% neq 0 (
+    echo Starting MySQL Database Server...
+    start "PRRP MySQL Server" "%MYSQL_BIN%\mysqld.exe" --datadir="C:\Users\adity\mysql_data" --console
+    timeout /t 3 /nobreak >nul
+) else (
+    echo MySQL Database Server is already running.
 )
 
-echo [2/2] Launching Frontend (React + Vite)...
-start "PRRP Frontend (Vite)" cmd /k "cd /d "%ROOT_DIR%frontend" && npm run dev"
+echo [2/3] Launching Spring Boot Backend (Port 8085)...
+start "PRRP Spring Boot Backend" cmd /k "cd /d "%ROOT_DIR%backend" && "%MAVEN_BIN%\mvn.cmd" spring-boot:run"
 
-echo.
-echo Launching Spring Boot Backend...
-start "PRRP Backend (Spring Boot)" cmd /k "cd /d "%ROOT_DIR%backend" && mvn spring-boot:run"
+echo [3/3] Launching React Frontend (Port 5173)...
+start "PRRP React Frontend" cmd /k "cd /d "%ROOT_DIR%frontend" && npm run dev"
 
 echo.
 echo ========================================================
-echo  All services are launching in separate windows!
-echo  Frontend URL : http://localhost:5173
-echo  Backend API  : http://localhost:8080/api/v1
-echo  Swagger UI   : http://localhost:8080/swagger-ui.html
+echo  All 3 tiers (DB + Backend + Frontend) are RUNNING!
+echo  
+echo  Frontend UI   : http://localhost:5173
+echo  Backend API   : http://localhost:8085/api/v1/products
+echo  Swagger UI    : http://localhost:8085/swagger-ui.html
+echo  Database Port : 3306 (prrp_db)
 echo ========================================================
 echo.
 pause

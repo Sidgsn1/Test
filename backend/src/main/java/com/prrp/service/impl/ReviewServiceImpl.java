@@ -50,14 +50,15 @@ public class ReviewServiceImpl implements ReviewService {
                 .build();
 
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            final Review finalReview = review;
             List<ReviewImage> images = request.getImageUrls().stream()
-                    .map(url -> ReviewImage.builder().review(review).imageUrl(url).build())
+                    .map(url -> ReviewImage.builder().review(finalReview).imageUrl(url).build())
                     .collect(Collectors.toList());
             review.setImages(images);
         }
 
-        review = reviewRepository.save(review);
-        return mapToReviewResponse(review);
+        Review savedReview = reviewRepository.save(review);
+        return mapToReviewResponse(savedReview);
     }
 
     @Override

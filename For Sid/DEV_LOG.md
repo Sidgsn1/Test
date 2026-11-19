@@ -46,6 +46,7 @@ Track: FSD Java (MCA 2nd Year)
   - Multi-criteria filtering by category, search keywords, price boundaries, and star rating thresholds.
   - Sorting options: Price ascending/descending, rating descending, review count descending, and weighted composite rank.
   - Dynamic aggregation: Evaluates average star ratings and 1-star to 5-star distribution counts exclusively from `APPROVED` reviews.
+  - Product creation (`POST /api/v1/products`) restricted to authenticated sellers and administrators.
 - **ReviewService**:
   - Enforces review submission workflow defaulting new submissions to `PENDING`.
   - Restricts duplicate reviews using `(user_id, product_id)` checks.
@@ -53,12 +54,14 @@ Track: FSD Java (MCA 2nd Year)
   - Enables customers to edit/delete their own submissions (edits automatically reset status to `PENDING`).
 - **SellerService**:
   - Generates seller dashboard metrics: product catalog count, approved vs pending review tallies, and seller-level rating distributions.
+  - Rich seller performance analytics (`/api/v1/sellers/{id}/ratings`): multi-aspect fulfillment ratings (shipping speed, item description accuracy, packaging quality, communication) and verified shopper feedback streams.
 
 ### C. REST API Endpoints
 - `POST /api/v1/auth/login` - User authentication and JWT retrieval.
-- `POST /api/v1/auth/register` - User signup with role assignment.
+- `POST /api/v1/auth/register` - User signup with role assignment directly into MySQL `users` table.
 - `GET /api/v1/auth/me` - Authenticated profile inspection.
 - `GET /api/v1/products` - Catalog search, filter, and pagination.
+- `POST /api/v1/products` - Add new product with primary image and SKU (Role: `SELLER`, `ADMIN`).
 - `GET /api/v1/products/{id}` - Detailed product attributes with rating metrics.
 - `GET /api/v1/products/categories` - Complete list of active product categories.
 - `GET /api/v1/products/rankings` - Top-ranked products based on weighted scoring.
@@ -70,6 +73,7 @@ Track: FSD Java (MCA 2nd Year)
 - `GET /api/v1/reviews` - Administrative review retrieval with status filter.
 - `PATCH /api/v1/admin/reviews/{id}/action` - Admin review approval or rejection.
 - `GET /api/v1/sellers/{id}/dashboard` - Seller analytics, ratings, and moderation status overview.
+- `GET /api/v1/sellers/{id}/ratings` - Radar performance metrics and direct seller reviews.
 
 ### D. Automated Quality Assurance & Testing
 - Unit test suite (`ReviewServiceTest.java`) using JUnit 5 and Mockito:
@@ -78,22 +82,28 @@ Track: FSD Java (MCA 2nd Year)
 
 ---
 
-## 4. Full-Stack Client-Server Integration (Sprint 3 - Step D)
-- **Centralized HTTP Client (`apiClient.js`)**:
-  - Built an async fetch transport handler with interceptors that automatically injects `Authorization: Bearer <token>` from local storage.
-  - Standardized error parsing for unified user feedback across React pages.
-- **Service Layer Bridge**:
-  - `productService.js`: Connected to `/api/v1/products`, supporting category slugs, rating thresholds, keyword search, and custom rankings.
-  - `reviewService.js`: Connected to review submission (`POST /api/v1/reviews`), product review streams (`GET /api/v1/products/{id}/reviews`), user review histories, and administrative moderation endpoints (`PATCH /api/v1/admin/reviews/{id}/action`).
-  - `sellerService.js`: Integrated with `/api/v1/sellers` endpoints for multi-seller analytics and dashboard overviews.
-  - `AuthContext.jsx`: Integrated login and registration pipelines directly into Spring Security JWT issuing endpoints.
-- **Resilience & Offline Handling**:
-  - All client services implement clean fallback strategies that ensure the UI runs smoothly whether testing against a live Spring Boot backend or during standalone evaluations.
+## 4. Full-Stack Client-Server Integration & Real Data Purge
+- **Complete Dummy Data Removal**:
+  - Removed all mock fallback files in `frontend/src/data/` (`products.js`, `reviews.js`, `users.js`, `sellers.js`, `sellerRatings.js`).
+  - The client application now operates exclusively against MySQL 8 database data via the Spring Boot 3 REST API.
+- **DTO Property Normalization**:
+  - Harmonized backend `ProductResponse` to expose both camelCase and legacy UI property names (`thumbnail`, `rating`, `reviewCount`, `rank`, `sellerRating`, `discountPercent`, `ratingBreakdown`).
+  - Added frontend normalization in `productService.js` guaranteeing no broken image tags or NaN stats.
+- **Seller Product Addition**:
+  - Implemented `POST /api/v1/products` in backend with image association in `product_images`.
+  - Added an interactive "Add Product" modal on the Seller Products page (`SellerProductsPage.jsx`) enabling sellers to add items directly to the MySQL database in real time.
+- **Seller Rating Analytics Fix**:
+  - Created `SellerAnalyticsResponse` providing multi-aspect operational breakdown (shipping speed, item description accuracy, packaging, communication) and verified customer feedback.
+  - Defensively rendered radar chart and aspect bars in `SellerAnalyticsPage.jsx`.
+- **Authentication & Registration**:
+  - Cleaned `LoginPage.jsx` of "Mock Credentials Loaded" labels, replacing them with a clean "Active Database Credentials" card.
+  - Enabled direct user registration via `POST /api/v1/auth/register` which writes directly to the MySQL `users` table and issues a valid JWT token.
 
 ---
 
-## 5. Sprint Commit Roadmap
-- Sprint 0: Repository structuring, 3NF database schema, seed data, and Spring Boot skeleton (`v0.1.0`).
-- Sprint 1: Review submission, administrative moderation workflow, and rating aggregation engine (`v0.2.0`).
-- Sprint 2: Multi-criteria product catalog filtering and ranking algorithms (`v0.3.0`).
-- Sprint 3: User profiles, security hardening, automated test suites, and final release packaging (`v1.0.0`).
+## 5. One-Click Launcher (`run_project.bat`)
+- Enhanced root batch script `run_project.bat` to automate the launch of all three tiers:
+  1. MySQL 8.4 Server daemon on port 3306.
+  2. Spring Boot 3.3.5 Backend on port 8085 via Maven.
+  3. React 19 Frontend on port 5173 via Vite.
+  4. Automatically opens `http://localhost:5173` in the default web browser.

@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { MOCK_USERS } from '../data/users';
 import { API_ENDPOINTS } from '../services/apiConfig';
 import { apiRequest, setAuthToken } from '../services/apiClient';
 
@@ -15,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error(e);
     }
-    return MOCK_USERS[0];
+    return null;
   });
 
   const [loading, setLoading] = useState(false);
@@ -29,7 +28,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  const login = async (email, password, role) => {
+  const login = async (email, password) => {
     setLoading(true);
     try {
       const authData = await apiRequest(API_ENDPOINTS.AUTH.LOGIN, {
@@ -51,43 +50,20 @@ export const AuthProvider = ({ children }) => {
           location: 'Delhi, India',
           avatar: mappedRole === 'seller'
             ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+            : mappedRole === 'admin'
+            ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80'
             : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
           joinedDate: 'November 2026',
           badge: mappedRole === 'seller' ? 'Verified Seller' : mappedRole === 'admin' ? 'Platform Admin' : 'Active Reviewer',
           bio: mappedRole === 'seller' ? 'Registered Indian marketplace vendor.' : mappedRole === 'admin' ? 'PRRP platform administrator.' : 'Passionate shopper and reviewer.'
         };
         setUser(loggedUser);
-        setLoading(false);
         return loggedUser;
       }
-    } catch (_) {}
-
-    const existing = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
-    let loggedUser;
-    if (existing) {
-      loggedUser = existing;
-    } else {
-      loggedUser = {
-        id: role === 'seller' ? 'seller-1' : role === 'admin' ? 'admin-1' : `cust-${Date.now()}`,
-        name: email.split('@')[0].replace('.', ' ').replace(/^./, str => str.toUpperCase()),
-        email,
-        role,
-        sellerId: role === 'seller' ? 'seller-1' : undefined,
-        companyName: role === 'seller' ? 'TechMatrix India' : undefined,
-        phone: '+91 98000 00000',
-        location: 'Mumbai, Maharashtra',
-        avatar: role === 'seller'
-          ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
-          : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-        joinedDate: 'November 2026',
-        badge: role === 'seller' ? 'Verified Seller' : role === 'admin' ? 'Platform Admin' : 'Active Reviewer',
-        bio: role === 'seller' ? 'Registered Indian marketplace vendor.' : role === 'admin' ? 'PRRP platform administrator.' : 'Passionate shopper and reviewer.'
-      };
+      throw new Error('Authentication response did not contain a valid token');
+    } finally {
+      setLoading(false);
     }
-
-    setUser(loggedUser);
-    setLoading(false);
-    return loggedUser;
   };
 
   const signup = async ({ name, email, password, role, companyName, phone, city, state }) => {
@@ -125,29 +101,12 @@ export const AuthProvider = ({ children }) => {
           bio: `Hello! I am a ${mappedRole} on PRRP.`
         };
         setUser(newUser);
-        setLoading(false);
         return newUser;
       }
-    } catch (_) {}
-
-    const newUser = {
-      id: role === 'seller' ? `seller-${Date.now()}` : `cust-${Date.now()}`,
-      name,
-      email,
-      role,
-      sellerId: role === 'seller' ? 'seller-1' : undefined,
-      companyName: companyName || (role === 'seller' ? `${name} Enterprise` : undefined),
-      phone: phone || '+91 99999 88888',
-      location: city || 'New Delhi, Delhi',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-      joinedDate: 'November 2026',
-      badge: role === 'seller' ? 'New Merchant' : 'New Member',
-      bio: `Hello! I am a ${role} on PRRP.`
-    };
-
-    setUser(newUser);
-    setLoading(false);
-    return newUser;
+      throw new Error('Registration failed to return user token');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
@@ -162,14 +121,14 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const switchRole = (newRole) => {
-    if (newRole === 'seller') {
-      setUser(MOCK_USERS[1]);
-    } else if (newRole === 'admin') {
-      setUser(MOCK_USERS[2]);
-    } else {
-      setUser(MOCK_USERS[0]);
-    }
+  const switchRole = async (newRole) => {
+    const creds = {
+      customer: { email: 'customer@prrp.in', password: 'password123' },
+      seller: { email: 'seller@prrp.in', password: 'password123' },
+      admin: { email: 'admin@prrp.in', password: 'password123' }
+    };
+    const target = creds[newRole] || creds.customer;
+    return await login(target.email, target.password);
   };
 
   return (

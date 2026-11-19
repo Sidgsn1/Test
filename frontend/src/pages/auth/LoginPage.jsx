@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, UserCheck, Store, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, Lock, UserCheck, Store, ShieldCheck, ArrowRight, AlertCircle, Database } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginPage = () => {
@@ -23,6 +23,7 @@ const LoginPage = () => {
     } else {
       setEmail('seller@prrp.in');
     }
+    setPassword('password123');
     setError('');
   };
 
@@ -42,7 +43,7 @@ const LoginPage = () => {
 
     try {
       setIsSubmitting(true);
-      const loggedUser = await login(email, password, role);
+      const loggedUser = await login(email, password);
       const userRole = loggedUser?.role || role;
       const targetPath = userRole === 'seller' ? '/seller/dashboard' : userRole === 'admin' ? '/admin/dashboard' : '/';
       const redirectPath = (location.state?.from?.pathname && location.state.from.pathname !== '/login') 
@@ -50,7 +51,7 @@ const LoginPage = () => {
         : targetPath;
       navigate(redirectPath, { replace: true });
     } catch (err) {
-      setError(err.message || 'Login failed. Please verify credentials.');
+      setError(err.message || 'Login failed. Please verify database connection and credentials.');
     } finally {
       setIsSubmitting(false);
     }
@@ -65,7 +66,6 @@ const LoginPage = () => {
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-purple-50/50 via-white to-slate-50">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-3xl shadow-xl border border-purple-100">
-        {/* Header */}
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-600 text-white shadow-lg mb-4">
             <Store className="w-7 h-7" />
@@ -78,7 +78,6 @@ const LoginPage = () => {
           </p>
         </div>
 
-        {/* Role Toggle Selector */}
         <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
           <button
             type="button"
@@ -118,14 +117,13 @@ const LoginPage = () => {
           </button>
         </div>
 
-        {/* Demo Credentials Box */}
-        <div className="bg-purple-50/80 border border-purple-100 rounded-xl p-3 text-xs text-purple-900 space-y-1">
-          <p className="font-semibold flex items-center gap-1 text-purple-800">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Mock Credentials Loaded:
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-600 space-y-1">
+          <p className="font-semibold flex items-center gap-1.5 text-slate-700">
+            <Database className="w-3.5 h-3.5 text-purple-600" />
+            Active Database Credentials:
           </p>
-          <p className="font-mono text-[11px] text-purple-700">
-            Email: <span className="font-bold">{email}</span> | Pass: <span className="font-bold">password123</span>
+          <p className="font-mono text-[11px] text-slate-800">
+            <span className="font-semibold text-purple-700">{email}</span> (Password: <span className="font-semibold">password123</span>)
           </p>
         </div>
 
@@ -136,7 +134,6 @@ const LoginPage = () => {
           </div>
         )}
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -187,7 +184,6 @@ const LoginPage = () => {
           </button>
         </form>
 
-        {/* Footer Link */}
         <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
           Don't have a PRRP account?{' '}
           <Link to={`/signup?role=${role}`} className="font-bold text-purple-600 hover:text-purple-800">

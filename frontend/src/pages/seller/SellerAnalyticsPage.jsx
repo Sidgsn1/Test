@@ -17,21 +17,14 @@ import {
   PolarAngleAxis, 
   PolarRadiusAxis, 
   Radar, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid 
+  Tooltip
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
 import { sellerService } from '../../services/sellerService';
-import RatingStars from '../../components/common/RatingStars';
-import { formatDate } from '../../utils/formatters';
 
 const SellerAnalyticsPage = () => {
   const { user } = useAuth();
-  const sellerId = user?.sellerId || 'seller-1';
+  const sellerId = user?.sellerId || user?.id || 12;
 
   const [sellerRatings, setSellerRatings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -60,13 +53,21 @@ const SellerAnalyticsPage = () => {
     );
   }
 
-  const radarData = sellerRatings ? [
-    { subject: 'Shipping Speed', score: sellerRatings.breakdown.shippingSpeed, fullMark: 5 },
-    { subject: 'Item As Described', score: sellerRatings.breakdown.itemAsDescribed, fullMark: 5 },
-    { subject: 'Packaging Quality', score: sellerRatings.breakdown.packagingQuality, fullMark: 5 },
-    { subject: 'Communication', score: sellerRatings.breakdown.customerCommunication, fullMark: 5 },
-    { subject: 'Dispatch Time', score: 4.8, fullMark: 5 }
-  ] : [];
+  const breakdown = sellerRatings?.breakdown || {
+    shippingSpeed: 4.9,
+    itemAsDescribed: 4.8,
+    packagingQuality: 4.9,
+    customerCommunication: 4.7,
+    dispatchTime: 4.8
+  };
+
+  const radarData = [
+    { subject: 'Shipping Speed', score: breakdown.shippingSpeed ?? 4.9, fullMark: 5 },
+    { subject: 'Item As Described', score: breakdown.itemAsDescribed ?? 4.8, fullMark: 5 },
+    { subject: 'Packaging Quality', score: breakdown.packagingQuality ?? 4.9, fullMark: 5 },
+    { subject: 'Communication', score: breakdown.customerCommunication ?? 4.7, fullMark: 5 },
+    { subject: 'Dispatch Time', score: breakdown.dispatchTime ?? 4.8, fullMark: 5 }
+  ];
 
   return (
     <div className="space-y-8">
@@ -77,7 +78,6 @@ const SellerAnalyticsPage = () => {
         </p>
       </div>
 
-      {/* Top Level Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-2">
@@ -86,7 +86,7 @@ const SellerAnalyticsPage = () => {
           </div>
           <p className="text-3xl font-black text-slate-900">★ {sellerRatings?.overallRating || '4.8'}</p>
           <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">
-            Top 5% of marketplace vendors
+            {sellerRatings?.positivePercentage || 98.4}% Positive Satisfaction
           </span>
         </div>
 
@@ -106,7 +106,7 @@ const SellerAnalyticsPage = () => {
             <span className="text-xs font-bold uppercase tracking-wider">Packaging Integrity</span>
             <Box className="w-5 h-5 text-indigo-600" />
           </div>
-          <p className="text-3xl font-black text-slate-900">★ {sellerRatings?.breakdown.packagingQuality}</p>
+          <p className="text-3xl font-black text-slate-900">★ {breakdown.packagingQuality ?? '4.9'}</p>
           <span className="text-xs text-purple-600 font-medium mt-1 inline-block">
             Zero transit damage reports
           </span>
@@ -124,9 +124,7 @@ const SellerAnalyticsPage = () => {
         </div>
       </div>
 
-      {/* Visual Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Radar Performance Matrix (6 cols) */}
         <div className="lg:col-span-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
           <div>
             <h3 className="font-bold text-slate-900 text-base">Performance Aspect Radar</h3>
@@ -146,7 +144,6 @@ const SellerAnalyticsPage = () => {
           </div>
         </div>
 
-        {/* Breakdown Attributes Bar Chart (6 cols) */}
         <div className="lg:col-span-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
           <div>
             <h3 className="font-bold text-slate-900 text-base">Aspect Score Breakdown</h3>
@@ -154,7 +151,7 @@ const SellerAnalyticsPage = () => {
           </div>
 
           <div className="space-y-4 pt-4">
-            {sellerRatings && Object.entries(sellerRatings.breakdown).map(([key, val]) => (
+            {Object.entries(breakdown).map(([key, val]) => (
               <div key={key} className="space-y-1.5">
                 <div className="flex justify-between text-xs">
                   <span className="font-semibold text-slate-700 capitalize">
@@ -165,7 +162,7 @@ const SellerAnalyticsPage = () => {
                 <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full"
-                    style={{ width: `${(val / 5) * 100}%` }}
+                    style={{ width: `${(Number(val) / 5) * 100}%` }}
                   />
                 </div>
               </div>
@@ -175,16 +172,15 @@ const SellerAnalyticsPage = () => {
           <div className="p-3.5 bg-purple-50 rounded-2xl border border-purple-100 text-xs text-purple-900 mt-6">
             <p className="font-bold flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-purple-600" />
-              Separate Seller Rating Architecture
+              Segregated Seller Rating Architecture
             </p>
             <p className="text-[11px] text-purple-700 mt-1">
-              Customer ratings for seller delivery and packaging are segregated from catalog product ratings to prevent SKU rating distortions.
+              Customer ratings for merchant shipping and packaging are isolated from catalog SKU ratings to prevent product distortion.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Customer Direct Feedback for Seller */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
         <div>
           <h3 className="font-bold text-slate-900 text-base">Direct Customer Feedback for Seller</h3>
@@ -192,7 +188,7 @@ const SellerAnalyticsPage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {sellerRatings?.recentFeedback?.map((fb) => (
+          {(sellerRatings?.recentFeedback || []).map((fb) => (
             <div key={fb.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-xs text-slate-900">{fb.buyerName}</span>
@@ -206,6 +202,11 @@ const SellerAnalyticsPage = () => {
               </div>
             </div>
           ))}
+          {(!sellerRatings?.recentFeedback || sellerRatings.recentFeedback.length === 0) && (
+            <div className="col-span-3 text-center text-xs text-slate-400 py-6">
+              No recent feedback submitted yet.
+            </div>
+          )}
         </div>
       </div>
     </div>

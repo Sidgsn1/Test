@@ -119,13 +119,13 @@ const AdminDashboardPage = () => {
                 <tr key={r.id} className="border-t border-slate-100">
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2">
-                      <img src={r.productThumbnail} alt={r.productName} className="w-8 h-8 object-cover rounded" />
+                      <img src={r.productThumbnail || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80'} alt={r.productName} className="w-8 h-8 object-cover rounded" />
                       <span className="text-sm font-medium text-slate-800">{r.productName}</span>
                     </div>
                   </td>
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2">
-                      <img src={r.userAvatar} alt={r.userName} className="w-6 h-6 rounded-full" />
+                      <img src={r.userAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'} alt={r.userName} className="w-6 h-6 rounded-full" />
                       <span className="text-xs text-slate-700">{r.userName}</span>
                     </div>
                   </td>

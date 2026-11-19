@@ -2,12 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   Trophy, 
   Filter, 
-  ArrowUpDown, 
   Star, 
-  TrendingUp, 
   Sparkles,
-  ExternalLink,
-  Award
+  ExternalLink
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import RatingStars from '../../components/common/RatingStars';
@@ -86,7 +83,6 @@ const SellerRankingsPage = () => {
           </p>
         </div>
 
-        {/* Category Filter */}
         <div className="flex items-center gap-2 text-xs">
           <Filter className="w-4 h-4 text-purple-600" />
           <select
@@ -104,7 +100,6 @@ const SellerRankingsPage = () => {
         </div>
       </div>
 
-      {/* Rankings List */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-4 bg-purple-50/60 border-b border-purple-100 text-xs text-purple-900 flex items-center justify-between">
           <span className="font-semibold flex items-center gap-1.5">
@@ -126,7 +121,7 @@ const SellerRankingsPage = () => {
                 {getRankBadge(idx)}
 
                 <img
-                  src={p.thumbnail}
+                  src={p.thumbnail || p.primaryImageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'}
                   alt={p.name}
                   className="w-16 h-16 object-cover rounded-2xl border border-slate-200"
                 />
@@ -144,20 +139,19 @@ const SellerRankingsPage = () => {
                 </div>
               </div>
 
-              {/* Stats & Score */}
               <div className="flex items-center gap-6 justify-between sm:justify-end">
                 <div className="text-right">
                   <div className="flex items-center gap-1.5 justify-end">
-                    <RatingStars rating={p.rating} size="xs" />
-                    <span className="font-black text-slate-900 text-sm">★ {p.rating}</span>
+                    <RatingStars rating={p.rating ?? p.averageRating ?? 0} size="xs" />
+                    <span className="font-black text-slate-900 text-sm">★ {p.rating ?? p.averageRating ?? 0}</span>
                   </div>
-                  <span className="text-xs text-slate-400">({p.reviewCount} reviews)</span>
+                  <span className="text-xs text-slate-400">({p.reviewCount ?? p.totalReviews ?? 0} reviews)</span>
                 </div>
 
                 <div className="text-right">
                   <p className="text-sm font-black text-slate-900">{formatINR(p.price)}</p>
                   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                    Save {p.discountPercent}%
+                    Save {p.discountPercent || 15}%
                   </span>
                 </div>
 
@@ -173,6 +167,11 @@ const SellerRankingsPage = () => {
               </div>
             </div>
           ))}
+          {rankings.length === 0 && !loading && (
+            <div className="p-12 text-center text-xs text-slate-400">
+              No product rankings available for this filter.
+            </div>
+          )}
         </div>
       </div>
     </div>

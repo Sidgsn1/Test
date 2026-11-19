@@ -1,8 +1,8 @@
 package com.prrp.controller;
 
 import com.prrp.dto.ProductResponse;
-import com.prrp.dto.RatingBreakdownDto;
 import com.prrp.dto.ReviewResponse;
+import com.prrp.dto.SellerAnalyticsResponse;
 import com.prrp.dto.SellerDashboardResponse;
 import com.prrp.entity.User;
 import com.prrp.service.ProductService;
@@ -34,7 +34,7 @@ public class SellerController {
     }
 
     @GetMapping("/{id}/ratings")
-    public ResponseEntity<RatingBreakdownDto> getSellerRatings(@PathVariable Long id) {
+    public ResponseEntity<SellerAnalyticsResponse> getSellerRatings(@PathVariable Long id) {
         return ResponseEntity.ok(sellerService.getSellerRatings(id));
     }
 

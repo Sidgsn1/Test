@@ -1,13 +1,19 @@
 package com.prrp.controller;
 
+import com.prrp.dto.ProductCreateRequest;
 import com.prrp.dto.ProductResponse;
 import com.prrp.dto.RatingBreakdownDto;
 import com.prrp.entity.Category;
+import com.prrp.security.UserPrincipal;
 import com.prrp.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -51,5 +57,14 @@ public class ProductController {
     @GetMapping("/{id}/ratings")
     public ResponseEntity<RatingBreakdownDto> getRatingBreakdown(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductRatingBreakdown(id));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    public ResponseEntity<ProductResponse> createProduct(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody ProductCreateRequest request
+    ) {
+        return new ResponseEntity<>(productService.createProduct(userPrincipal.getId(), request), HttpStatus.CREATED);
     }
 }

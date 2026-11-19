@@ -1,14 +1,17 @@
 package com.prrp.service.impl;
 
+import com.prrp.dto.ProductCreateRequest;
 import com.prrp.dto.ProductResponse;
 import com.prrp.dto.RatingBreakdownDto;
 import com.prrp.entity.Category;
 import com.prrp.entity.Product;
 import com.prrp.entity.ProductImage;
+import com.prrp.entity.User;
 import com.prrp.exception.ResourceNotFoundException;
 import com.prrp.repository.CategoryRepository;
 import com.prrp.repository.ProductRepository;
 import com.prrp.repository.ReviewRepository;
+import com.prrp.repository.UserRepository;
 import com.prrp.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -26,6 +29,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -51,6 +55,10 @@ public class ProductServiceImpl implements ProductService {
             responses.sort((a, b) -> Long.compare(b.getTotalReviews(), a.getTotalReviews()));
         }
 
+        for (int i = 0; i < responses.size(); i++) {
+            responses.get(i).setRank(i + 1);
+        }
+
         return new PageImpl<>(responses, sortedPageable, products.getTotalElements());
     }
 
@@ -71,9 +79,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductResponse> getSellerProducts(Long sellerId) {
-        return productRepository.findBySellerId(sellerId).stream()
+        List<ProductResponse> list = productRepository.findBySellerId(sellerId).stream()
                 .map(this::mapToProductResponse)
                 .collect(Collectors.toList());
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).setRank(i + 1);
+        }
+        return list;
     }
 
     @Override
@@ -96,6 +108,10 @@ public class ProductServiceImpl implements ProductService {
             return Double.compare(scoreB, scoreA);
         });
 
+        for (int i = 0; i < responses.size(); i++) {
+            responses.get(i).setRank(i + 1);
+        }
+
         return responses;
     }
 
@@ -111,6 +127,61 @@ public class ProductServiceImpl implements ProductService {
                 .totalReviews(totalCount)
                 .distribution(distribution)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse createProduct(Long sellerId, ProductCreateRequest request) {
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller not found with id: " + sellerId));
+
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + request.getCategoryId()));
+
+        String sku = request.getSku();
+        if (sku == null || sku.trim().isEmpty()) {
+            sku = "SKU-" + System.currentTimeMillis();
+        }
+
+        Product product = Product.builder()
+                .seller(seller)
+                .category(category)
+                .name(request.getName().trim())
+                .description(request.getDescription().trim())
+                .price(request.getPrice())
+                .sku(sku.trim())
+                .isAvailable(true)
+                .images(new ArrayList<>())
+                .build();
+
+        String primaryUrl = request.getPrimaryImageUrl();
+        if (primaryUrl != null && !primaryUrl.trim().isEmpty()) {
+            ProductImage primaryImg = ProductImage.builder()
+                    .product(product)
+                    .imageUrl(primaryUrl.trim())
+                    .isPrimary(true)
+                    .displayOrder(1)
+                    .build();
+            product.getImages().add(primaryImg);
+        }
+
+        if (request.getImages() != null && !request.getImages().isEmpty()) {
+            int order = product.getImages().size() + 1;
+            for (String imgUrl : request.getImages()) {
+                if (imgUrl != null && !imgUrl.trim().isEmpty() && !imgUrl.trim().equals(primaryUrl)) {
+                    ProductImage img = ProductImage.builder()
+                            .product(product)
+                            .imageUrl(imgUrl.trim())
+                            .isPrimary(false)
+                            .displayOrder(order++)
+                            .build();
+                    product.getImages().add(img);
+                }
+            }
+        }
+
+        Product saved = productRepository.save(product);
+        return mapToProductResponse(saved);
     }
 
     private ProductResponse mapToProductResponse(Product product) {
@@ -132,6 +203,12 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
+        if (primaryImageUrl == null || primaryImageUrl.isEmpty()) {
+            primaryImageUrl = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80";
+        }
+
+        double finalRating = avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0;
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -144,10 +221,17 @@ public class ProductServiceImpl implements ProductService {
                 .sellerId(product.getSeller().getId())
                 .sellerName(product.getSeller().getFullName())
                 .primaryImageUrl(primaryImageUrl)
+                .thumbnail(primaryImageUrl)
                 .images(imageUrls)
-                .averageRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0)
+                .averageRating(finalRating)
+                .rating(finalRating)
                 .totalReviews(totalReviews)
+                .reviewCount(totalReviews)
                 .ratingDistribution(distribution)
+                .ratingBreakdown(distribution)
+                .rank(1)
+                .sellerRating(4.8)
+                .discountPercent(15)
                 .build();
     }
 

@@ -1,5 +1,6 @@
 package com.prrp.service;
 
+import com.prrp.dto.ProductCreateRequest;
 import com.prrp.dto.ProductResponse;
 import com.prrp.dto.RatingBreakdownDto;
 import com.prrp.entity.Category;
@@ -16,4 +17,5 @@ public interface ProductService {
     List<ProductResponse> getSellerProducts(Long sellerId);
     List<ProductResponse> getRankings(Long categoryId);
     RatingBreakdownDto getProductRatingBreakdown(Long productId);
+    ProductResponse createProduct(Long sellerId, ProductCreateRequest request);
 }

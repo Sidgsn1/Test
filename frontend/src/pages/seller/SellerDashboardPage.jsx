@@ -33,7 +33,7 @@ import { formatINR, formatDate, getModerationBadgeClass } from '../../utils/form
 
 const SellerDashboardPage = () => {
   const { user } = useAuth();
-  const sellerId = user?.sellerId || 'seller-1';
+  const sellerId = user?.sellerId || user?.id || 12;
 
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -52,8 +52,8 @@ const SellerDashboardPage = () => {
         reviewService.getSellerReviews(sellerId),
         sellerService.getSellerRatings(sellerId)
       ]);
-      setProducts(prods);
-      setReviews(revs);
+      setProducts(prods || []);
+      setReviews(revs || []);
       setSellerRatingData(ratingInfo);
     } catch (err) {
       console.error(err);
@@ -65,7 +65,7 @@ const SellerDashboardPage = () => {
   const totalProducts = products.length;
   const totalReviews = reviews.length;
   const avgRating = products.length > 0
-    ? (products.reduce((acc, p) => acc + p.rating, 0) / products.length).toFixed(1)
+    ? (products.reduce((acc, p) => acc + (p.rating ?? p.averageRating ?? 0), 0) / products.length).toFixed(1)
     : '4.8';
 
   const pendingModeration = reviews.filter(r => r.moderationStatus === 'PENDING').length;
@@ -95,121 +95,119 @@ const SellerDashboardPage = () => {
 
   return (
     <div className="space-y-8">
-      {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-300 mb-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            Verified Indian Merchant Hub
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/20 backdrop-blur-xs text-white">
+              Seller Merchant Hub
+            </span>
+            <span className="text-xs text-purple-200 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              Verified Indian Vendor
+            </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Welcome back, {user?.companyName || user?.name}
-          </h2>
-          <p className="text-sm text-purple-200 mt-1 max-w-xl">
-            Track your product feedback, moderation queues, and merchant performance in real-time.
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            {user?.companyName || user?.name || 'Seller Dashboard'}
+          </h1>
+          <p className="text-xs sm:text-sm text-purple-200 mt-1 max-w-xl">
+            Real-time catalog oversight, buyer review moderation queues, and operational rating metrics.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/15">
-          <Award className="w-8 h-8 text-amber-300" />
-          <div>
-            <p className="text-xs text-purple-200 font-medium">Merchant Score</p>
-            <p className="text-xl font-black text-white">4.8 / 5.0</p>
+        <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15">
+          <div className="text-center">
+            <div className="flex items-center gap-1 justify-center">
+              <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+              <span className="text-2xl font-black">{avgRating}</span>
+            </div>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-purple-200 mt-0.5">
+              Avg SKU Rating
+            </p>
+          </div>
+          <div className="h-8 w-[1px] bg-white/20" />
+          <div className="text-center">
+            <span className="text-2xl font-black">★ {sellerRatingData?.overallRating || '4.8'}</span>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-purple-200 mt-0.5">
+              Seller Score
+            </p>
           </div>
         </div>
       </div>
 
-      {/* KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Catalog Products</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Catalog SKUs</span>
             <Package className="w-5 h-5 text-purple-600" />
           </div>
           <p className="text-2xl font-black text-slate-900">{totalProducts}</p>
-          <span className="text-xs text-emerald-600 font-medium mt-1 inline-block">
-            All active in catalog
-          </span>
+          <span className="text-xs text-slate-500 font-medium mt-1 inline-block">Active listed products</span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Customer Reviews</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Total Reviews</span>
             <MessageSquare className="w-5 h-5 text-indigo-600" />
           </div>
           <p className="text-2xl font-black text-slate-900">{totalReviews}</p>
-          <span className="text-xs text-purple-600 font-medium mt-1 inline-block">
-            Across listed catalog
-          </span>
+          <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">{approvedCount} approved reviews</span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Catalog Avg Rating</span>
-            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-          </div>
-          <p className="text-2xl font-black text-slate-900">★ {avgRating}</p>
-          <span className="text-xs text-slate-500 font-medium mt-1 inline-block">
-            Weighted across 900+ ratings
-          </span>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">In Moderation Queue</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Review Queue</span>
             <Clock className="w-5 h-5 text-amber-500" />
           </div>
-          <p className="text-2xl font-black text-slate-900">{pendingModeration}</p>
-          <span className="text-xs text-amber-600 font-medium mt-1 inline-block">
-            Pending editorial review
-          </span>
+          <p className="text-2xl font-black text-amber-600">{pendingModeration}</p>
+          <span className="text-xs text-slate-500 font-medium mt-1 inline-block">Awaiting admin review</span>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider">Satisfaction</span>
+            <TrendingUp className="w-5 h-5 text-emerald-600" />
+          </div>
+          <p className="text-2xl font-black text-emerald-600">{sellerRatingData?.positivePercentage || 98.4}%</p>
+          <span className="text-xs text-slate-500 font-medium mt-1 inline-block">Verified buyer satisfaction</span>
         </div>
       </div>
 
-      {/* Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Rating Distribution Bar Chart (7 cols) */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <div>
-            <h3 className="font-bold text-slate-900 text-base">Reviews Rating Distribution</h3>
-            <p className="text-xs text-slate-500">Volume of customer ratings received by star score</p>
+        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-slate-900 text-base">Ratings Distribution</h3>
+              <p className="text-xs text-slate-500">Breakdown of customer feedback across star tiers</p>
+            </div>
+            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full">
+              Across all items
+            </span>
           </div>
-          <div className="h-64 w-full">
+
+          <div className="h-64 w-full pt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={ratingDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="star" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}
-                  cursor={{ fill: '#f8fafc' }}
-                />
-                <Bar dataKey="count" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+              <BarChart data={ratingDistribution} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="star" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                <Tooltip />
+                <Bar dataKey="count" radius={[0, 8, 8, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Moderation Status Breakdown (5 cols) */}
-        <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+        <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
           <div>
-            <h3 className="font-bold text-slate-900 text-base">Moderation Status Pipeline</h3>
-            <p className="text-xs text-slate-500">Tracking compliance of user submitted feedback</p>
+            <h3 className="font-bold text-slate-900 text-base">Review Moderation Status</h3>
+            <p className="text-xs text-slate-500">Live platform compliance ratio</p>
           </div>
 
           <div className="h-52 w-full flex items-center justify-center">
             {moderationData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={moderationData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
+                  <Pie data={moderationData} innerRadius={55} outerRadius={75} paddingAngle={4} dataKey="value">
                     {moderationData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -218,24 +216,29 @@ const SellerDashboardPage = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-xs text-slate-400">No moderation data</p>
+              <p className="text-xs text-slate-400">No moderation events logged</p>
             )}
           </div>
 
-          <div className="flex items-center justify-center gap-4 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 text-emerald-700">
-              <span className="w-3 h-3 rounded-full bg-emerald-500" />
-              Approved ({approvedCount})
-            </span>
-            <span className="flex items-center gap-1.5 text-amber-700">
-              <span className="w-3 h-3 rounded-full bg-amber-500" />
-              Pending ({pendingModeration})
-            </span>
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                Approved Reviews
+              </span>
+              <span className="font-bold text-slate-900">{approvedCount}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                Pending Verification
+              </span>
+              <span className="font-bold text-slate-900">{pendingModeration}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Associated Products Quick View */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
@@ -253,21 +256,29 @@ const SellerDashboardPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {products.map((p) => (
             <div key={p.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center gap-3">
-              <img src={p.thumbnail} alt={p.name} className="w-14 h-14 object-cover rounded-xl border border-slate-200" />
+              <img
+                src={p.thumbnail || p.primaryImageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'}
+                alt={p.name}
+                className="w-14 h-14 object-cover rounded-xl border border-slate-200"
+              />
               <div className="overflow-hidden">
                 <h4 className="font-bold text-xs text-slate-900 truncate">{p.name}</h4>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-xs font-bold text-amber-600">★ {p.rating}</span>
-                  <span className="text-[10px] text-slate-400">({p.reviewCount} revs)</span>
+                  <span className="text-xs font-bold text-amber-600">★ {p.rating ?? p.averageRating ?? 0}</span>
+                  <span className="text-[10px] text-slate-400">({p.reviewCount ?? p.totalReviews ?? 0} revs)</span>
                 </div>
                 <p className="text-xs font-bold text-slate-800 mt-1">{formatINR(p.price)}</p>
               </div>
             </div>
           ))}
+          {products.length === 0 && (
+            <div className="col-span-3 text-center py-6 text-xs text-slate-400">
+              No products found for this merchant.
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Recent Reviews Preview */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
@@ -278,27 +289,39 @@ const SellerDashboardPage = () => {
             to="/seller/reviews"
             className="text-xs font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1"
           >
-            Review Moderation Queue <ArrowUpRight className="w-3.5 h-3.5" />
+            All Reviews <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="space-y-3">
-          {reviews.slice(0, 3).map((r) => (
-            <div key={r.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-xs text-slate-900">{r.userName}</span>
-                  <span className="text-xs text-slate-400">• on {r.productName}</span>
-                  <RatingStars rating={r.rating} size="xs" />
+        <div className="divide-y divide-slate-100">
+          {reviews.slice(0, 5).map((rev) => (
+            <div key={rev.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <img
+                  src={rev.productThumbnail || rev.userAvatar || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80'}
+                  alt={rev.productName}
+                  className="w-10 h-10 object-cover rounded-xl border border-slate-200"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-slate-900">{rev.productName}</span>
+                    <RatingStars rating={rev.rating} size="xs" />
+                  </div>
+                  <p className="text-xs text-slate-600 line-clamp-1 mt-0.5">"{rev.comment}"</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">By {rev.userName} • {formatDate(rev.createdAt)}</p>
                 </div>
-                <p className="text-xs text-slate-600 line-clamp-1">{r.comment}</p>
               </div>
 
-              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border self-start sm:self-auto ${getModerationBadgeClass(r.moderationStatus)}`}>
-                {r.moderationStatus}
-              </span>
+              <div>
+                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${getModerationBadgeClass(rev.moderationStatus)}`}>
+                  {rev.moderationStatus}
+                </span>
+              </div>
             </div>
           ))}
+          {reviews.length === 0 && (
+            <p className="text-xs text-slate-400 text-center py-6">No customer reviews recorded yet.</p>
+          )}
         </div>
       </div>
     </div>

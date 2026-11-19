@@ -25,8 +25,15 @@ public class ProductResponse {
     private Long sellerId;
     private String sellerName;
     private String primaryImageUrl;
+    private String thumbnail;
     private List<String> images;
     private Double averageRating;
+    private Double rating;
     private Long totalReviews;
+    private Long reviewCount;
     private Map<Integer, Long> ratingDistribution;
+    private Map<Integer, Long> ratingBreakdown;
+    private Integer rank;
+    private Double sellerRating;
+    private Integer discountPercent;
 }

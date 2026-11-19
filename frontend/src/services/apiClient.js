@@ -11,7 +11,7 @@ export const setAuthToken = (token) => {
   }
 };
 
-export const apiRequest = async (endpoint, options = {}, timeoutMs = 2000) => {
+export const apiRequest = async (endpoint, options = {}, timeoutMs = 10000) => {
   const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',

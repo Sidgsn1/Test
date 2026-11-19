@@ -78,7 +78,21 @@ Track: FSD Java (MCA 2nd Year)
 
 ---
 
-## 4. Sprint Commit Roadmap
+## 4. Full-Stack Client-Server Integration (Sprint 3 - Step D)
+- **Centralized HTTP Client (`apiClient.js`)**:
+  - Built an async fetch transport handler with interceptors that automatically injects `Authorization: Bearer <token>` from local storage.
+  - Standardized error parsing for unified user feedback across React pages.
+- **Service Layer Bridge**:
+  - `productService.js`: Connected to `/api/v1/products`, supporting category slugs, rating thresholds, keyword search, and custom rankings.
+  - `reviewService.js`: Connected to review submission (`POST /api/v1/reviews`), product review streams (`GET /api/v1/products/{id}/reviews`), user review histories, and administrative moderation endpoints (`PATCH /api/v1/admin/reviews/{id}/action`).
+  - `sellerService.js`: Integrated with `/api/v1/sellers` endpoints for multi-seller analytics and dashboard overviews.
+  - `AuthContext.jsx`: Integrated login and registration pipelines directly into Spring Security JWT issuing endpoints.
+- **Resilience & Offline Handling**:
+  - All client services implement clean fallback strategies that ensure the UI runs smoothly whether testing against a live Spring Boot backend or during standalone evaluations.
+
+---
+
+## 5. Sprint Commit Roadmap
 - Sprint 0: Repository structuring, 3NF database schema, seed data, and Spring Boot skeleton (`v0.1.0`).
 - Sprint 1: Review submission, administrative moderation workflow, and rating aggregation engine (`v0.2.0`).
 - Sprint 2: Multi-criteria product catalog filtering and ranking algorithms (`v0.3.0`).

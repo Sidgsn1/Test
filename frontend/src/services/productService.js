@@ -1,11 +1,28 @@
+import { API_ENDPOINTS } from './apiConfig';
+import { apiRequest } from './apiClient';
 import { PRODUCTS } from '../data/products';
 import { CATEGORIES } from '../data/categories';
 
-const simulateDelay = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const productService = {
-  async getProducts({ category, minRating, sortBy = 'featured', search } = {}) {
-    await simulateDelay();
+  async getProducts({ category, minRating, sortBy = 'featured', search, page = 0, size = 20 } = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (category && category !== 'all') {
+        const catObj = CATEGORIES.find(c => c.slug === category);
+        if (catObj) params.append('categoryId', catObj.id);
+      }
+      if (minRating) params.append('minRating', minRating);
+      if (search) params.append('keyword', search);
+      if (sortBy) params.append('sortBy', sortBy);
+      params.append('page', page);
+      params.append('size', size);
+
+      const data = await apiRequest(`${API_ENDPOINTS.PRODUCTS.LIST}?${params.toString()}`);
+      if (data && data.content) {
+        return data.content;
+      }
+    } catch (_) {}
+
     let result = [...PRODUCTS];
 
     if (category && category !== 'all') {
@@ -42,24 +59,41 @@ export const productService = {
   },
 
   async getProductById(id) {
-    await simulateDelay();
-    const product = PRODUCTS.find(p => p.id === id);
+    try {
+      const product = await apiRequest(API_ENDPOINTS.PRODUCTS.DETAILS(id));
+      if (product) return product;
+    } catch (_) {}
+
+    const product = PRODUCTS.find(p => p.id === id || p.id === Number(id));
     if (!product) throw new Error('Product not found');
     return product;
   },
 
   async getCategories() {
-    await simulateDelay();
+    try {
+      const categories = await apiRequest(API_ENDPOINTS.PRODUCTS.CATEGORIES);
+      if (categories && categories.length > 0) return categories;
+    } catch (_) {}
+
     return CATEGORIES;
   },
 
   async getSellerProducts(sellerId) {
-    await simulateDelay();
+    try {
+      const products = await apiRequest(API_ENDPOINTS.SELLERS.PRODUCTS(sellerId));
+      if (products) return products;
+    } catch (_) {}
+
     return PRODUCTS.filter(p => p.sellerId === sellerId);
   },
 
   async getRankings({ category } = {}) {
-    await simulateDelay();
+    try {
+      const params = category && category !== 'all' ? `?categoryId=${category}` : '';
+      const rankings = await apiRequest(`${API_ENDPOINTS.PRODUCTS.RANKINGS}${params}`);
+      if (rankings && rankings.length > 0) return rankings;
+    } catch (_) {}
+
     let result = [...PRODUCTS];
     if (category && category !== 'all') {
       result = result.filter(p => p.category === category);

@@ -29,7 +29,56 @@ Track: FSD Java (MCA 2nd Year)
 
 ---
 
-## 3. Sprint Commit Roadmap
+## 3. Spring Boot Backend Implementation (Sprint 1 & Sprint 2 - D04, D05, D06, D07)
+
+### A. Security & Authentication Architecture
+- Implemented stateless token-based authentication using **Spring Security 6** and **JJWT (0.12.6)**:
+  - `JwtTokenProvider`: Issues and verifies HMAC SHA-256 signed JSON Web Tokens containing user ID, subject (email), and granted authorities (`ROLE_CUSTOMER`, `ROLE_SELLER`, `ROLE_ADMIN`).
+  - `JwtAuthenticationFilter`: Request interception filter extracting Bearer authorization tokens, populating `SecurityContextHolder`.
+  - `SecurityConfig`: Configures public access for product browsing, category discovery, public reviews, and Swagger OpenAPI docs. Restricts administrative review moderation to `ROLE_ADMIN` and validates credentials with `BCryptPasswordEncoder`.
+
+### B. Business Logic Services
+- **AuthService**:
+  - `login`: Authenticates credentials against database and returns JWT session token with profile details.
+  - `register`: Validates email uniqueness, persists account details with encrypted passwords, and returns authenticated payload.
+  - `getCurrentUserProfile`: Retrieves user identity and account timestamps.
+- **ProductService**:
+  - Multi-criteria filtering by category, search keywords, price boundaries, and star rating thresholds.
+  - Sorting options: Price ascending/descending, rating descending, review count descending, and weighted composite rank.
+  - Dynamic aggregation: Evaluates average star ratings and 1-star to 5-star distribution counts exclusively from `APPROVED` reviews.
+- **ReviewService**:
+  - Enforces review submission workflow defaulting new submissions to `PENDING`.
+  - Restricts duplicate reviews using `(user_id, product_id)` checks.
+  - Administrative moderation workflow: Approves or rejects reviews while persisting an audit record in `review_moderation_logs`.
+  - Enables customers to edit/delete their own submissions (edits automatically reset status to `PENDING`).
+- **SellerService**:
+  - Generates seller dashboard metrics: product catalog count, approved vs pending review tallies, and seller-level rating distributions.
+
+### C. REST API Endpoints
+- `POST /api/v1/auth/login` - User authentication and JWT retrieval.
+- `POST /api/v1/auth/register` - User signup with role assignment.
+- `GET /api/v1/auth/me` - Authenticated profile inspection.
+- `GET /api/v1/products` - Catalog search, filter, and pagination.
+- `GET /api/v1/products/{id}` - Detailed product attributes with rating metrics.
+- `GET /api/v1/products/categories` - Complete list of active product categories.
+- `GET /api/v1/products/rankings` - Top-ranked products based on weighted scoring.
+- `GET /api/v1/products/{id}/ratings` - 5-star rating distribution breakdown.
+- `GET /api/v1/products/{productId}/reviews` - Approved reviews with star filtering and sorting.
+- `POST /api/v1/reviews` - Review submission with automatic `PENDING` moderation state.
+- `PUT /api/v1/reviews/{id}` - Update existing review (resets to `PENDING`).
+- `DELETE /api/v1/reviews/{id}` - Review removal by author or admin.
+- `GET /api/v1/reviews` - Administrative review retrieval with status filter.
+- `PATCH /api/v1/admin/reviews/{id}/action` - Admin review approval or rejection.
+- `GET /api/v1/sellers/{id}/dashboard` - Seller analytics, ratings, and moderation status overview.
+
+### D. Automated Quality Assurance & Testing
+- Unit test suite (`ReviewServiceTest.java`) using JUnit 5 and Mockito:
+  - Verifies new review submissions strictly initialize with `PENDING` moderation status.
+  - Validates rejection of duplicate review submissions for identical product and customer combinations.
+
+---
+
+## 4. Sprint Commit Roadmap
 - Sprint 0: Repository structuring, 3NF database schema, seed data, and Spring Boot skeleton (`v0.1.0`).
 - Sprint 1: Review submission, administrative moderation workflow, and rating aggregation engine (`v0.2.0`).
 - Sprint 2: Multi-criteria product catalog filtering and ranking algorithms (`v0.3.0`).

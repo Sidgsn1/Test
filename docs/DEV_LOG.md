@@ -1,0 +1,36 @@
+# Development & Sprint Activity Log
+Project Code: J05 | Product Review and Rating Platform (PRRP)
+Track: FSD Java (MCA 2nd Year)
+
+---
+
+## 1. Project Initialization & Architecture Restructuring (Sprint 0 - D01, D02, D03)
+- Reorganized repository structure to strictly adhere to the academic deliverable specification:
+  - `backend/`: Java 17 + Spring Boot 3.x REST API service.
+  - `frontend/`: React 19 + Tailwind CSS + Lucide React client application.
+  - `database/`: 3NF normalized schema (`schema.sql`) and comprehensive Indian test dataset (`seed_data.sql`).
+  - `docs/`: System documentation, ER specifications, and development logs.
+- Cleaned codebase of extraneous and automated inline comments across frontend components. Code is maintained in an idiomatic, production-ready style.
+
+---
+
+## 2. Database Design & 3NF Normalization
+- Target Database: MySQL 8.x (utf8mb4 encoding).
+- Entities created:
+  - `users`: Core authentication and user management table supporting three system roles (`ROLE_CUSTOMER`, `ROLE_SELLER`, `ROLE_ADMIN`).
+  - `categories`: Hierarchical category catalog with unique slugs for SEO and filtering.
+  - `products`: Product catalog linked to selling partners (`users.user_id`) and categories (`categories.category_id`).
+  - `product_images`: 1:N normalized table for multiple product gallery photos with primary image flags and display order.
+  - `reviews`: Core transaction table capturing star ratings (1 to 5), title, feedback, and moderation state (`PENDING`, `APPROVED`, `REJECTED`). Enforces a composite unique key `(user_id, product_id)` to prevent multiple review spamming.
+  - `review_images`: Normalized storage for optional customer-uploaded review photos.
+  - `review_moderation_logs`: Audit trail recording administrative decisions (`APPROVED` / `REJECTED`), moderator ID, and timestamps.
+- Aggregation View:
+  - `view_product_rating_metrics`: High-performance SQL view computing average star rating, total approved count, and star-level distribution breakdown on-the-fly.
+
+---
+
+## 3. Sprint Commit Roadmap
+- Sprint 0: Repository structuring, 3NF database schema, seed data, and Spring Boot skeleton (`v0.1.0`).
+- Sprint 1: Review submission, administrative moderation workflow, and rating aggregation engine (`v0.2.0`).
+- Sprint 2: Multi-criteria product catalog filtering and ranking algorithms (`v0.3.0`).
+- Sprint 3: User profiles, security hardening, automated test suites, and final release packaging (`v1.0.0`).

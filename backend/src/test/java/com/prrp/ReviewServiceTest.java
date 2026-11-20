@@ -1,4 +1,4 @@
-package com.prrp.service;
+// package com.prrp.service;
 
 import com.prrp.dto.ReviewCreateRequest;
 import com.prrp.dto.ReviewResponse;

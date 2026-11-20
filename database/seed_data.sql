@@ -1,19 +1,19 @@
 USE prrp_db;
 
 INSERT INTO users (user_id, full_name, email, password_hash, phone_number, role, city, state) VALUES
-(1, 'Vikramaditya Sharma', 'admin@prrp.in', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919811001122', 'ROLE_ADMIN', 'New Delhi', 'Delhi'),
-(2, 'Aarav Infotech Ltd', 'contact@aaravtech.in', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919876543210', 'ROLE_SELLER', 'Bengaluru', 'Karnataka'),
-(3, 'Desi Crafts & Home Decor', 'support@desicrafts.com', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919822334455', 'ROLE_SELLER', 'Jaipur', 'Rajasthan'),
-(4, 'FitPulse Fitness Gear', 'sales@fitpulse.in', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919844556677', 'ROLE_SELLER', 'Pune', 'Maharashtra'),
-(5, 'Rohan Verma', 'rohan.verma@gmail.com', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919810123456', 'ROLE_CUSTOMER', 'Noida', 'Uttar Pradesh'),
-(6, 'Priya Sundaram', 'priya.sundaram@yahoo.co.in', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919717890123', 'ROLE_CUSTOMER', 'Chennai', 'Tamil Nadu'),
-(7, 'Ananya Iyer', 'ananya.iyer@outlook.com', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919650234567', 'ROLE_CUSTOMER', 'Mumbai', 'Maharashtra'),
-(8, 'Kabir Mehta', 'kabir.mehta@gmail.com', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919920345678', 'ROLE_CUSTOMER', 'Ahmedabad', 'Gujarat'),
-(9, 'Simran Kaur', 'simran.kaur@gmail.com', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919818456789', 'ROLE_CUSTOMER', 'Chandigarh', 'Punjab'),
-(10, 'Tariq Hussain', 'tariq.hussain@gmail.com', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919419123456', 'ROLE_CUSTOMER', 'Hyderabad', 'Telangana'),
-(11, 'Customer User', 'customer@prrp.in', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919800000000', 'ROLE_CUSTOMER', 'New Delhi', 'Delhi'),
-(12, 'TechMatrix India', 'seller@prrp.in', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919876543210', 'ROLE_SELLER', 'Noida', 'Uttar Pradesh'),
-(13, 'Platform Admin', 'realadmin@prrp.in', '$2a$10$ZLoF2E.mAyMGpqe7d/E3GuTWfWd/IAoIlOULViQeLs2xWulERZLR2', '+919811001122', 'ROLE_ADMIN', 'New Delhi', 'Delhi'),
+(1, 'Vikramaditya Sharma', 'admin@prrp.in', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919811001122', 'ROLE_ADMIN', 'New Delhi', 'Delhi'),
+(2, 'Aarav Infotech Ltd', 'contact@aaravtech.in', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919876543210', 'ROLE_SELLER', 'Bengaluru', 'Karnataka'),
+(3, 'Desi Crafts & Home Decor', 'support@desicrafts.com', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919822334455', 'ROLE_SELLER', 'Jaipur', 'Rajasthan'),
+(4, 'FitPulse Fitness Gear', 'sales@fitpulse.in', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919844556677', 'ROLE_SELLER', 'Pune', 'Maharashtra'),
+(5, 'Rohan Verma', 'rohan.verma@gmail.com', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919810123456', 'ROLE_CUSTOMER', 'Noida', 'Uttar Pradesh'),
+(6, 'Priya Sundaram', 'priya.sundaram@yahoo.co.in', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919717890123', 'ROLE_CUSTOMER', 'Chennai', 'Tamil Nadu'),
+(7, 'Ananya Iyer', 'ananya.iyer@outlook.com', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919650234567', 'ROLE_CUSTOMER', 'Mumbai', 'Maharashtra'),
+(8, 'Kabir Mehta', 'kabir.mehta@gmail.com', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919920345678', 'ROLE_CUSTOMER', 'Ahmedabad', 'Gujarat'),
+(9, 'Simran Kaur', 'simran.kaur@gmail.com', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919818456789', 'ROLE_CUSTOMER', 'Chandigarh', 'Punjab'),
+(10, 'Tariq Hussain', 'tariq.hussain@gmail.com', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919419123456', 'ROLE_CUSTOMER', 'Hyderabad', 'Telangana'),
+(11, 'Customer User', 'customer@prrp.in', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919800000000', 'ROLE_CUSTOMER', 'New Delhi', 'Delhi'),
+(12, 'TechMatrix India', 'seller@prrp.in', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919876543210', 'ROLE_SELLER', 'Noida', 'Uttar Pradesh'),
+(13, 'Platform Admin', 'realadmin@prrp.in', '$2a$10$qhRSk/.Bjx4YDuEaRiyFBuLZIbk/0wNIx/9Ty8Nl1T3olOGzIkkkG', '+919811001122', 'ROLE_ADMIN', 'New Delhi', 'Delhi'),
 (15, 'Aditya Kumar', 'adityakumar@customer.com', '$2a$10$jUBtBVvsdiEzmr5WJkCsauMK/FJ8mpRIOUUorRy1t/ulnk/Sr/Dv6', '+91 98765 43210', 'ROLE_CUSTOMER', 'New Delhi', 'Delhi'),
 (16, 'Sid Gusain', 'sid@seller.com', '$2a$10$mKpcuRPuCFrsSI06kBDaXOUDhOLbsC8CM53hMn7F.7xXOCAnLeraS', '+91 1234567890', 'ROLE_SELLER', 'Gzb', 'Delhi')
 ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email), password_hash = VALUES(password_hash), role = VALUES(role);

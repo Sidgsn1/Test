@@ -1,244 +1,436 @@
-import React, { useState } from 'react';
-import { 
-  Building2, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Save, 
-  CheckCircle, 
-  ShieldCheck, 
-  FileText,
+
+import React, { useEffect, useState } from 'react';
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Save,
+  CheckCircle,
   Calendar,
-  Clock,
-  Sparkles
+  ShieldCheck,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+
 import { useAuth } from '../../context/AuthContext';
 import { sellerService } from '../../services/sellerService';
 
 const SellerProfilePage = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateUserProfile } = useAuth();
+
+  const sellerId = user?.sellerId ?? user?.id;
 
   const [formData, setFormData] = useState({
-    name: user?.name || 'Vikram Singhania',
-    companyName: user?.companyName || 'TechMatrix Solutions Pvt Ltd',
-    email: user?.email || 'seller@techmatrix.in',
-    phone: user?.phone || '+91 98200 12345',
-    location: user?.location || 'Bengaluru, Karnataka',
-    gstin: '29AABCT1332L1Z8',
-    bio: user?.bio || 'Premier distributor of certified electronics, audio gear, and personal computing accessories in India.'
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    city: '',
+    state: ''
   });
 
-  const [isSaved, setIsSaved] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [createdAt, setCreatedAt] = useState(null);
+  const [isActive, setIsActive] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadProfile = async () => {
+      if (!sellerId) {
+        setError('Seller account information is unavailable.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError('');
+
+        const profile = await sellerService.getSellerProfile(sellerId);
+
+        if (ignore) return;
+
+        setFormData({
+          fullName: profile.fullName || '',
+          email: profile.email || '',
+          phoneNumber: profile.phoneNumber || '',
+          city: profile.city || '',
+          state: profile.state || ''
+        });
+
+        setCreatedAt(profile.createdAt || null);
+        setIsActive(profile.isActive);
+
+        updateUserProfile({
+          name: profile.fullName,
+          email: profile.email,
+          phone: profile.phoneNumber || '',
+          location: [profile.city, profile.state]
+            .filter(Boolean)
+            .join(', ')
+        });
+
+      } catch (err) {
+        if (!ignore) {
+          setError(err.message || 'Unable to load seller profile.');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      ignore = true;
+    };
+  }, [sellerId]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+
+    setError('');
+    setSuccess('');
+
+    if (!sellerId) {
+      setError('Seller account information is unavailable.');
+      return;
+    }
+
+    const fullName = formData.fullName.trim();
+    const phoneNumber = formData.phoneNumber.trim();
+
+    if (!fullName) {
+      setError('Full name is required.');
+      return;
+    }
+
+    if (fullName.length > 100) {
+      setError('Full name cannot exceed 100 characters.');
+      return;
+    }
+
+    if (phoneNumber && !/^[0-9]{10,15}$/.test(phoneNumber)) {
+      setError('Phone number must contain 10 to 15 digits.');
+      return;
+    }
+
+    if (formData.city.length > 60 || formData.state.length > 60) {
+      setError('City and state cannot exceed 60 characters.');
+      return;
+    }
+
+    const updatePayload = {
+      fullName,
+      phoneNumber: phoneNumber || null,
+      city: formData.city.trim() || null,
+      state: formData.state.trim() || null
+    };
+
     try {
-      if (user?.sellerId) {
-        await sellerService.updateSellerProfile(user.sellerId, formData);
-      }
-      updateProfile(formData);
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 4000);
+      setSaving(true);
+
+      const updatedProfile = await sellerService.updateSellerProfile(
+        sellerId,
+        updatePayload
+      );
+
+      setFormData({
+        fullName: updatedProfile.fullName || '',
+        email: updatedProfile.email || '',
+        phoneNumber: updatedProfile.phoneNumber || '',
+        city: updatedProfile.city || '',
+        state: updatedProfile.state || ''
+      });
+
+      setCreatedAt(updatedProfile.createdAt || createdAt);
+      setIsActive(updatedProfile.isActive);
+
+      updateUserProfile({
+        name: updatedProfile.fullName,
+        email: updatedProfile.email,
+        phone: updatedProfile.phoneNumber || '',
+        location: [
+          updatedProfile.city,
+          updatedProfile.state
+        ].filter(Boolean).join(', ')
+      });
+
+      setSuccess('Seller profile updated successfully.');
+
     } catch (err) {
-      console.error(err);
+      setError(err.message || 'Failed to update seller profile.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
+  const formatDate = (date) => {
+    if (!date) return 'Not available';
+
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-[300px] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+        <p className="text-sm text-slate-500">Loading seller profile...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl space-y-6">
+
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Seller Profile & Storefront Credentials</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Manage your verified business identity, tax credentials (GSTIN), and public merchant profile.
+        <h2 className="text-xl font-bold text-slate-900">
+          Seller Profile
+        </h2>
+
+        <p className="text-xs text-slate-500 mt-1">
+          Manage your personal and account information.
         </p>
       </div>
 
-      {isSaved && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-emerald-600" />
-          <span>Seller profile updated successfully!</span>
+      {error && (
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {success && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 shrink-0" />
+          <span>{success}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Merchant Card */}
-        <div className="md:col-span-1 space-y-4">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs text-center space-y-4">
-            <img
-              src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
-              alt={formData.companyName}
-              className="w-24 h-24 rounded-full object-cover mx-auto ring-4 ring-purple-100 shadow-md"
-            />
-            <div>
-              <h3 className="font-bold text-slate-900 text-base">{formData.companyName}</h3>
-              <p className="text-xs text-slate-500">{formData.name} (Authorized Signatory)</p>
+
+        {/* Seller Information Card */}
+        <div className="space-y-4">
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center space-y-4">
+
+            <div className="w-24 h-24 rounded-full bg-purple-100 flex items-center justify-center mx-auto">
+              <User className="w-12 h-12 text-purple-700" />
             </div>
 
-            <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                GST Verified Merchant
-              </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-base">
+                {formData.fullName}
+              </h3>
 
-              <p className="text-slate-400 text-[11px] pt-1">
-                Active Member since April 2022
+              <p className="text-xs text-slate-500 mt-1">
+                Seller Account
               </p>
             </div>
+
+            <div className="pt-3 border-t border-slate-100 space-y-3">
+
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <ShieldCheck className="w-4 h-4 text-purple-600" />
+
+                <span className="text-slate-600">
+                  {isActive === true
+                    ? 'Active Account'
+                    : isActive === false
+                    ? 'Inactive Account'
+                    : 'Status unavailable'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                <Calendar className="w-4 h-4" />
+
+                <span>
+                  Joined {formatDate(createdAt)}
+                </span>
+              </div>
+
+            </div>
           </div>
 
-          <div className="bg-purple-900 text-white p-5 rounded-3xl space-y-2 text-xs">
-            <p className="font-bold text-amber-300 uppercase tracking-wider text-[11px]">
-              Customer Visibility
+          <div className="bg-purple-900 text-white p-5 rounded-2xl space-y-2">
+
+            <h3 className="font-bold text-sm">
+              Account Information
+            </h3>
+
+            <p className="text-xs text-purple-200 leading-relaxed">
+              Your seller account information is stored securely.
+              Your email address is used as your login identity and
+              cannot be changed from this page.
             </p>
-            <p className="text-purple-200 leading-relaxed">
-              Your company name, dispatch city, and response metrics are presented to consumers alongside your products.
-            </p>
+
           </div>
+
         </div>
 
         {/* Profile Form */}
         <div className="md:col-span-2">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
-            <h3 className="font-bold text-slate-900 text-sm mb-5">Business Information</h3>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6">
+
+            <h3 className="font-bold text-slate-900 text-sm mb-5">
+              Personal Information
+            </h3>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+              {/* Full Name */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Company / Storefront Name
+                <label className="block font-semibold text-slate-700 text-xs mb-2">
+                  Full Name
                 </label>
+
                 <div className="relative">
                   <input
                     type="text"
-                    required
-                    name="companyName"
-                    value={formData.companyName}
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleChange}
-                    className="w-full bg-slate-50 focus:bg-white text-slate-800 text-xs sm:text-sm rounded-xl pl-10 pr-4 py-2.5 border border-slate-200 focus:border-purple-600 outline-none"
+                    required
+                    maxLength={100}
+                    className="w-full bg-slate-50 focus:bg-white text-sm text-slate-800 rounded-xl pl-10 pr-4 py-3 border border-slate-200 focus:border-purple-600 outline-none"
                   />
-                  <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Signatory Name
-                  </label>
+              {/* Email */}
+              <div>
+                <label className="block font-semibold text-slate-700 text-xs mb-2">
+                  Registered Email
+                </label>
+
+                <div className="relative">
                   <input
-                    type="text"
-                    required
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full bg-slate-50 focus:bg-white text-slate-800 text-xs sm:text-sm rounded-xl px-3 py-2.5 border border-slate-200 focus:border-purple-600 outline-none"
+                    type="email"
+                    value={formData.email}
+                    readOnly
+                    className="w-full bg-slate-100 text-slate-500 text-sm rounded-xl pl-10 pr-4 py-3 border border-slate-200 outline-none cursor-not-allowed"
                   />
+
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
 
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Email cannot be changed from this page.
+                </p>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block font-semibold text-slate-700 text-xs mb-2">
+                  Phone Number
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    placeholder="Enter 10-15 digit phone number"
+                    maxLength={15}
+                    className="w-full bg-slate-50 focus:bg-white text-sm text-slate-800 rounded-xl pl-10 pr-4 py-3 border border-slate-200 focus:border-purple-600 outline-none"
+                  />
+
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
+              </div>
+
+              {/* City and State */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    GSTIN Registration Number
+                  <label className="block font-semibold text-slate-700 text-xs mb-2">
+                    City
                   </label>
+
                   <div className="relative">
                     <input
                       type="text"
-                      name="gstin"
-                      value={formData.gstin}
+                      name="city"
+                      value={formData.city}
                       onChange={handleChange}
-                      placeholder="29AABCT1332L1Z8"
-                      className="w-full bg-slate-50 focus:bg-white text-slate-800 font-mono text-xs sm:text-sm rounded-xl pl-9 pr-3 py-2.5 border border-slate-200 focus:border-purple-600 outline-none"
+                      maxLength={60}
+                      placeholder="Enter city"
+                      className="w-full bg-slate-50 focus:bg-white text-sm text-slate-800 rounded-xl pl-10 pr-3 py-3 border border-slate-200 focus:border-purple-600 outline-none"
                     />
-                    <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Official Business Email
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full bg-slate-50 focus:bg-white text-slate-800 text-xs sm:text-sm rounded-xl pl-9 pr-3 py-2.5 border border-slate-200 focus:border-purple-600 outline-none"
-                    />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Dispatch Phone / WhatsApp
+                  <label className="block font-semibold text-slate-700 text-xs mb-2">
+                    State
                   </label>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full bg-slate-50 focus:bg-white text-slate-800 text-xs sm:text-sm rounded-xl pl-9 pr-3 py-2.5 border border-slate-200 focus:border-purple-600 outline-none"
-                    />
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-              </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Warehouse Location / City
-                </label>
-                <div className="relative">
                   <input
                     type="text"
-                    name="location"
-                    value={formData.location}
+                    name="state"
+                    value={formData.state}
                     onChange={handleChange}
-                    className="w-full bg-slate-50 focus:bg-white text-slate-800 text-xs sm:text-sm rounded-xl pl-9 pr-3 py-2.5 border border-slate-200 focus:border-purple-600 outline-none"
+                    maxLength={60}
+                    placeholder="Enter state"
+                    className="w-full bg-slate-50 focus:bg-white text-sm text-slate-800 rounded-xl px-3 py-3 border border-slate-200 focus:border-purple-600 outline-none"
                   />
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
+
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Public Storefront Description
-                </label>
-                <textarea
-                  rows={3}
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  className="w-full bg-slate-50 focus:bg-white text-slate-800 text-xs sm:text-sm rounded-xl p-3 border border-slate-200 focus:border-purple-600 outline-none resize-y"
-                />
-              </div>
+              {/* Submit */}
+              <div className="pt-3 border-t border-slate-100">
 
-              <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/20 active:scale-[0.99] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  disabled={saving}
+                  className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm shadow-md shadow-purple-600/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  {loading ? 'Saving...' : 'Update Merchant Details'}
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
+
               </div>
+
             </form>
+
           </div>
+
         </div>
+
       </div>
     </div>
   );

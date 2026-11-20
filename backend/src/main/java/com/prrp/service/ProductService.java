@@ -1,3 +1,4 @@
+
 package com.prrp.service;
 
 import com.prrp.dto.ProductCreateRequest;
@@ -11,11 +12,26 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface ProductService {
-    Page<ProductResponse> getProducts(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, String keyword, String sortBy, Pageable pageable);
+
+    Page<ProductResponse> getProducts(
+            Long categoryId,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            BigDecimal minRating,
+            String keyword,
+            String sortBy,
+            Pageable pageable
+    );
+
     ProductResponse getProductById(Long id);
+
     List<Category> getAllCategories();
+
     List<ProductResponse> getSellerProducts(Long sellerId);
+
     List<ProductResponse> getRankings(Long categoryId);
+
     RatingBreakdownDto getProductRatingBreakdown(Long productId);
+
     ProductResponse createProduct(Long sellerId, ProductCreateRequest request);
 }

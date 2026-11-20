@@ -1,9 +1,11 @@
+
 package com.prrp.service.impl;
 
 import com.prrp.dto.AuthResponse;
 import com.prrp.dto.LoginRequest;
 import com.prrp.dto.RegisterRequest;
 import com.prrp.dto.UserProfileResponse;
+import com.prrp.dto.CustomerProfileUpdateRequest;
 import com.prrp.entity.User;
 import com.prrp.exception.BadRequestException;
 import com.prrp.exception.ResourceNotFoundException;
@@ -31,12 +33,18 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
         );
 
         String token = tokenProvider.generateToken(authentication);
+
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with email: " + request.getEmail()
+                ));
 
         return AuthResponse.builder()
                 .token(token)
@@ -51,7 +59,9 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email address is already registered.");
+            throw new BadRequestException(
+                    "Email address is already registered."
+            );
         }
 
         User user = User.builder()
@@ -68,8 +78,12 @@ public class AuthServiceImpl implements AuthService {
         user = userRepository.save(user);
 
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
         );
+
         String token = tokenProvider.generateToken(authentication);
 
         return AuthResponse.builder()
@@ -85,8 +99,40 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public UserProfileResponse getCurrentUserProfile(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with email: " + email
+                ));
 
+        return mapToUserProfileResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public UserProfileResponse updateCurrentUserProfile(
+            String email,
+            CustomerProfileUpdateRequest request
+    ) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with email: " + email
+                ));
+
+        if (request.getFullName() == null ||
+                request.getFullName().trim().isEmpty()) {
+            throw new BadRequestException("Full name is required.");
+        }
+
+        user.setFullName(request.getFullName().trim());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setCity(request.getCity());
+        user.setState(request.getState());
+
+        User updatedUser = userRepository.save(user);
+
+        return mapToUserProfileResponse(updatedUser);
+    }
+
+    private UserProfileResponse mapToUserProfileResponse(User user) {
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())

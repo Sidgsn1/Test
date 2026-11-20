@@ -1,3 +1,4 @@
+
 package com.prrp.dto;
 
 import lombok.AllArgsConstructor;
@@ -34,6 +35,4 @@ public class ProductResponse {
     private Map<Integer, Long> ratingDistribution;
     private Map<Integer, Long> ratingBreakdown;
     private Integer rank;
-    private Double sellerRating;
-    private Integer discountPercent;
 }

@@ -1,3 +1,4 @@
+
 import { API_ENDPOINTS } from './apiConfig';
 import { apiRequest } from './apiClient';
 
@@ -46,11 +47,25 @@ const CATEGORY_ASSETS = {
 
 const normalizeProduct = (p) => {
   if (!p) return p;
-  const thumbnail = p.thumbnail || p.primaryImageUrl || (p.images && p.images[0]) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80';
+
+  const thumbnail =
+    p.thumbnail ||
+    p.primaryImageUrl ||
+    (p.images && p.images[0]) ||
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80';
+
   const rating = Number(p.rating ?? p.averageRating ?? 0);
   const reviewCount = Number(p.reviewCount ?? p.totalReviews ?? 0);
-  const ratingBreakdown = p.ratingBreakdown || p.ratingDistribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-  const images = (p.images && p.images.length > 0) ? p.images : [thumbnail];
+
+  const ratingBreakdown =
+    p.ratingBreakdown ||
+    p.ratingDistribution ||
+    { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+
+  const images =
+    p.images && p.images.length > 0
+      ? p.images
+      : [thumbnail];
 
   return {
     ...p,
@@ -63,47 +78,82 @@ const normalizeProduct = (p) => {
     ratingBreakdown,
     ratingDistribution: ratingBreakdown,
     images,
-    discountPercent: p.discountPercent || 15,
-    sellerRating: p.sellerRating || 4.8,
-    rank: p.rank || 1,
-    inStock: p.isAvailable ?? true
+    inStock: p.isAvailable
   };
 };
 
 export const productService = {
-  async getProducts({ category, minRating, sortBy = 'featured', search, page = 0, size = 50 } = {}) {
+
+  async getProducts({
+    category,
+    minRating,
+    sortBy = 'featured',
+    search,
+    page = 0,
+    size = 50
+  } = {}) {
+
     const params = new URLSearchParams();
+
     if (category && category !== 'all') {
       params.append('categoryId', category);
     }
-    if (minRating) params.append('minRating', minRating);
-    if (search) params.append('keyword', search);
-    if (sortBy) params.append('sortBy', sortBy);
+
+    if (minRating) {
+      params.append('minRating', minRating);
+    }
+
+    if (search) {
+      params.append('keyword', search);
+    }
+
+    if (sortBy) {
+      params.append('sortBy', sortBy);
+    }
+
     params.append('page', page);
     params.append('size', size);
 
-    const data = await apiRequest(`${API_ENDPOINTS.PRODUCTS.LIST}?${params.toString()}`);
+    const data = await apiRequest(
+      `${API_ENDPOINTS.PRODUCTS.LIST}?${params.toString()}`
+    );
+
     if (data && data.content) {
       return data.content.map(normalizeProduct);
     }
+
     return [];
   },
 
   async getProductById(id) {
-    const product = await apiRequest(API_ENDPOINTS.PRODUCTS.DETAILS(id));
-    if (!product) throw new Error('Product not found in database');
+
+    const product = await apiRequest(
+      API_ENDPOINTS.PRODUCTS.DETAILS(id)
+    );
+
+    if (!product) {
+      throw new Error('Product not found in database');
+    }
+
     return normalizeProduct(product);
   },
 
   async getCategories() {
-    const categories = await apiRequest(API_ENDPOINTS.PRODUCTS.CATEGORIES);
+
+    const categories = await apiRequest(
+      API_ENDPOINTS.PRODUCTS.CATEGORIES
+    );
+
     if (Array.isArray(categories)) {
+
       return categories.map(c => {
+
         const asset = CATEGORY_ASSETS[c.slug] || {
           icon: 'Sparkles',
           image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=600&q=80',
           itemCount: 25
         };
+
         return {
           ...c,
           icon: c.icon || asset.icon,
@@ -112,31 +162,51 @@ export const productService = {
         };
       });
     }
+
     return [];
   },
 
   async getSellerProducts(sellerId) {
-    const products = await apiRequest(API_ENDPOINTS.SELLERS.PRODUCTS(sellerId));
+
+    const products = await apiRequest(
+      API_ENDPOINTS.SELLERS.PRODUCTS(sellerId)
+    );
+
     if (Array.isArray(products)) {
       return products.map(normalizeProduct);
     }
+
     return [];
   },
 
   async getRankings({ category } = {}) {
-    const params = category && category !== 'all' ? `?categoryId=${category}` : '';
-    const rankings = await apiRequest(`${API_ENDPOINTS.PRODUCTS.RANKINGS}${params}`);
+
+    const params =
+      category && category !== 'all'
+        ? `?categoryId=${category}`
+        : '';
+
+    const rankings = await apiRequest(
+      `${API_ENDPOINTS.PRODUCTS.RANKINGS}${params}`
+    );
+
     if (Array.isArray(rankings)) {
       return rankings.map(normalizeProduct);
     }
+
     return [];
   },
 
   async createProduct(productData) {
-    const created = await apiRequest(API_ENDPOINTS.PRODUCTS.LIST, {
-      method: 'POST',
-      body: JSON.stringify(productData)
-    });
+
+    const created = await apiRequest(
+      API_ENDPOINTS.PRODUCTS.LIST,
+      {
+        method: 'POST',
+        body: JSON.stringify(productData)
+      }
+    );
+
     return normalizeProduct(created);
   }
 };

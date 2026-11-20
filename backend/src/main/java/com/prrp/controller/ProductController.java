@@ -1,3 +1,4 @@
+
 package com.prrp.controller;
 
 import com.prrp.dto.ProductCreateRequest;
@@ -31,32 +32,71 @@ public class ProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) BigDecimal minRating,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "featured") String sortBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(productService.getProducts(categoryId, minPrice, maxPrice, keyword, sortBy, PageRequest.of(page, size)));
+        if (page < 0 || size < 1 || size > 100) {
+            throw new IllegalArgumentException(
+                    "Page must be non-negative and size must be between 1 and 100."
+            );
+        }
+
+        if (minRating != null &&
+                (minRating.compareTo(BigDecimal.ZERO) < 0 ||
+                 minRating.compareTo(BigDecimal.valueOf(5)) > 0)) {
+            throw new IllegalArgumentException(
+                    "Minimum rating must be between 0 and 5."
+            );
+        }
+
+        return ResponseEntity.ok(
+                productService.getProducts(
+                        categoryId,
+                        minPrice,
+                        maxPrice,
+                        minRating,
+                        keyword,
+                        sortBy,
+                        PageRequest.of(page, size)
+                )
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductById(id));
+    public ResponseEntity<ProductResponse> getProductById(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                productService.getProductById(id)
+        );
     }
 
     @GetMapping("/categories")
     public ResponseEntity<List<Category>> getCategories() {
-        return ResponseEntity.ok(productService.getAllCategories());
+        return ResponseEntity.ok(
+                productService.getAllCategories()
+        );
     }
 
     @GetMapping("/rankings")
-    public ResponseEntity<List<ProductResponse>> getRankings(@RequestParam(required = false) Long categoryId) {
-        return ResponseEntity.ok(productService.getRankings(categoryId));
+    public ResponseEntity<List<ProductResponse>> getRankings(
+            @RequestParam(required = false) Long categoryId
+    ) {
+        return ResponseEntity.ok(
+                productService.getRankings(categoryId)
+        );
     }
 
     @GetMapping("/{id}/ratings")
-    public ResponseEntity<RatingBreakdownDto> getRatingBreakdown(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductRatingBreakdown(id));
+    public ResponseEntity<RatingBreakdownDto> getRatingBreakdown(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                productService.getProductRatingBreakdown(id)
+        );
     }
 
     @PostMapping
@@ -65,6 +105,12 @@ public class ProductController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody ProductCreateRequest request
     ) {
-        return new ResponseEntity<>(productService.createProduct(userPrincipal.getId(), request), HttpStatus.CREATED);
+        return new ResponseEntity<>(
+                productService.createProduct(
+                        userPrincipal.getId(),
+                        request
+                ),
+                HttpStatus.CREATED
+        );
     }
 }

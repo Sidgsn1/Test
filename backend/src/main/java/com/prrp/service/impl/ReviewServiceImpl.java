@@ -1,3 +1,4 @@
+
 package com.prrp.service.impl;
 
 import com.prrp.dto.ModerationActionRequest;
@@ -31,13 +32,17 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     public ReviewResponse submitReview(Long userId, ReviewCreateRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with id: " + userId));
 
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + request.getProductId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Product not found with id: " + request.getProductId()));
 
-        if (reviewRepository.existsByUserIdAndProductId(userId, request.getProductId())) {
-            throw new BadRequestException("You have already submitted a review for this product.");
+        if (reviewRepository.existsByUserIdAndProductId(
+                userId, request.getProductId())) {
+            throw new BadRequestException(
+                    "You have already submitted a review for this product.");
         }
 
         Review review = Review.builder()
@@ -49,11 +54,16 @@ public class ReviewServiceImpl implements ReviewService {
                 .moderationStatus(ModerationStatus.PENDING)
                 .build();
 
-        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            final Review finalReview = review;
+        if (request.getImageUrls() != null
+                && !request.getImageUrls().isEmpty()) {
+
             List<ReviewImage> images = request.getImageUrls().stream()
-                    .map(url -> ReviewImage.builder().review(finalReview).imageUrl(url).build())
+                    .map(url -> ReviewImage.builder()
+                            .review(review)
+                            .imageUrl(url)
+                            .build())
                     .collect(Collectors.toList());
+
             review.setImages(images);
         }
 
@@ -63,15 +73,20 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReviewResponse> getReviewsByProduct(Long productId, Integer ratingFilter, String sortBy) {
+    public List<ReviewResponse> getReviewsByProduct(
+            Long productId, Integer ratingFilter, String sortBy) {
+
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+
         if ("highest".equalsIgnoreCase(sortBy)) {
             sort = Sort.by(Sort.Direction.DESC, "rating");
         } else if ("lowest".equalsIgnoreCase(sortBy)) {
             sort = Sort.by(Sort.Direction.ASC, "rating");
         }
 
-        List<Review> reviews = reviewRepository.findByProductIdAndModerationStatus(productId, ModerationStatus.APPROVED, sort);
+        List<Review> reviews =
+                reviewRepository.findByProductIdAndModerationStatus(
+                        productId, ModerationStatus.APPROVED, sort);
 
         if (ratingFilter != null && ratingFilter > 0) {
             reviews = reviews.stream()
@@ -79,13 +94,16 @@ public class ReviewServiceImpl implements ReviewService {
                     .collect(Collectors.toList());
         }
 
-        return reviews.stream().map(this::mapToReviewResponse).collect(Collectors.toList());
+        return reviews.stream()
+                .map(this::mapToReviewResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ReviewResponse> getUserReviews(Long userId) {
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+
         return reviewRepository.findByUserId(userId, sort).stream()
                 .map(this::mapToReviewResponse)
                 .collect(Collectors.toList());
@@ -95,30 +113,58 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional(readOnly = true)
     public List<ReviewResponse> getAllReviews(ModerationStatus status) {
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+
         List<Review> reviews = (status != null)
                 ? reviewRepository.findByModerationStatus(status, sort)
                 : reviewRepository.findAll(sort);
 
-        return reviews.stream().map(this::mapToReviewResponse).collect(Collectors.toList());
+        return reviews.stream()
+                .map(this::mapToReviewResponse)
+                .collect(Collectors.toList());
     }
 
+    // Public seller reviews: APPROVED only
     @Override
     @Transactional(readOnly = true)
     public List<ReviewResponse> getSellerReviews(Long sellerId) {
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
-        return reviewRepository.findByProductSellerId(sellerId, sort).stream()
+
+        return reviewRepository
+                .findByProductSellerIdAndModerationStatus(
+                        sellerId,
+                        ModerationStatus.APPROVED,
+                        sort
+                )
+                .stream()
+                .map(this::mapToReviewResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Private seller dashboard: all moderation statuses
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getSellerDashboardReviews(Long sellerId) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+
+        return reviewRepository
+                .findByProductSellerId(sellerId, sort)
+                .stream()
                 .map(this::mapToReviewResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public ReviewResponse moderateReview(Long reviewId, Long adminId, ModerationActionRequest request) {
+    public ReviewResponse moderateReview(
+            Long reviewId, Long adminId, ModerationActionRequest request) {
+
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Review not found with id: " + reviewId));
 
         User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new ResourceNotFoundException("Admin user not found with id: " + adminId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Admin user not found with id: " + adminId));
 
         review.setModerationStatus(request.getAction());
         review = reviewRepository.save(review);
@@ -129,6 +175,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .action(request.getAction())
                 .moderationRemarks(request.getRemarks())
                 .build();
+
         moderationLogRepository.save(log);
 
         return mapToReviewResponse(review);
@@ -136,12 +183,16 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional
-    public ReviewResponse updateReview(Long reviewId, Long userId, ReviewCreateRequest request) {
+    public ReviewResponse updateReview(
+            Long reviewId, Long userId, ReviewCreateRequest request) {
+
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Review not found with id: " + reviewId));
 
         if (!review.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("You can only modify your own reviews.");
+            throw new UnauthorizedException(
+                    "You can only modify your own reviews.");
         }
 
         review.setRating(request.getRating());
@@ -157,10 +208,12 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     public void deleteReview(Long reviewId, Long userId, boolean isAdmin) {
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Review not found with id: " + reviewId));
 
         if (!isAdmin && !review.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("You can only delete your own reviews.");
+            throw new UnauthorizedException(
+                    "You can only delete your own reviews.");
         }
 
         reviewRepository.delete(review);
@@ -168,13 +221,19 @@ public class ReviewServiceImpl implements ReviewService {
 
     private ReviewResponse mapToReviewResponse(Review review) {
         String thumbnail = null;
-        if (review.getProduct().getImages() != null && !review.getProduct().getImages().isEmpty()) {
-            thumbnail = review.getProduct().getImages().get(0).getImageUrl();
+
+        if (review.getProduct().getImages() != null
+                && !review.getProduct().getImages().isEmpty()) {
+            thumbnail = review.getProduct().getImages()
+                    .get(0).getImageUrl();
         }
 
         List<String> imageUrls = new ArrayList<>();
+
         if (review.getImages() != null) {
-            imageUrls = review.getImages().stream().map(ReviewImage::getImageUrl).collect(Collectors.toList());
+            imageUrls = review.getImages().stream()
+                    .map(ReviewImage::getImageUrl)
+                    .collect(Collectors.toList());
         }
 
         return ReviewResponse.builder()

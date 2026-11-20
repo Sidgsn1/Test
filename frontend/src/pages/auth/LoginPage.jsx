@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 const LoginPage = () => {
   const [role, setRole] = useState('customer');
   const [email, setEmail] = useState('customer@prrp.in');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('Password@123');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,7 +23,7 @@ const LoginPage = () => {
     } else {
       setEmail('seller@prrp.in');
     }
-    setPassword('password123');
+    setPassword('Password@123');
     setError('');
   };
 
@@ -123,7 +123,7 @@ const LoginPage = () => {
             Active Database Credentials:
           </p>
           <p className="font-mono text-[11px] text-slate-800">
-            <span className="font-semibold text-purple-700">{email}</span> (Password: <span className="font-semibold">password123</span>)
+            <span className="font-semibold text-purple-700">{email}</span> (Password: <span className="font-semibold">Password@123</span>)
           </p>
         </div>
 

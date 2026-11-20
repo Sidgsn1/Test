@@ -123,9 +123,9 @@ export const AuthProvider = ({ children }) => {
 
   const switchRole = async (newRole) => {
     const creds = {
-      customer: { email: 'customer@prrp.in', password: 'password123' },
-      seller: { email: 'seller@prrp.in', password: 'password123' },
-      admin: { email: 'admin@prrp.in', password: 'password123' }
+      customer: { email: 'customer@prrp.in', password: 'Password@123' },
+      seller: { email: 'seller@prrp.in', password: 'Password@123' },
+      admin: { email: 'admin@prrp.in', password: 'Password@123' }
     };
     const target = creds[newRole] || creds.customer;
     return await login(target.email, target.password);
